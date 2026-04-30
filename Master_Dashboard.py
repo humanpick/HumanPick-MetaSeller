@@ -209,13 +209,13 @@ components.html("""
 <script>
     const doc = window.parent.document;
     
-    // 1. 모바일 전용 보라색 플로팅 버튼 강제 생성 (CSS 무시하고 화면 최상단에 직접 부착)
+    // 1. 모바일 전용 보라색 플로팅 버튼 강제 생성
     if (!doc.getElementById('humanpick-mobile-btn')) {
         const btn = doc.createElement('button');
         btn.id = 'humanpick-mobile-btn';
         btn.innerHTML = '☰';
         
-        // Humanpick 시그니처 스타일 강제 적용
+        // Humanpick 시그니처 스타일 
         Object.assign(btn.style, {
             position: 'fixed', top: '15px', left: '15px', zIndex: '999999',
             background: '#8B5CF6', color: '#ffffff', border: 'none',
@@ -233,17 +233,19 @@ components.html("""
         doc.defaultView.addEventListener('resize', toggleVisibility);
         toggleVisibility();
         
-        // 버튼 터치 시, 스트림릿이 숨겨둔 원래 사이드바 버튼을 자바스크립트로 강제 클릭시킴
-        btn.addEventListener('click', () => {
-            const defaultBtn = doc.querySelector('button[kind="header"]') || doc.querySelector('[data-testid="collapsedControl"]');
-            if (defaultBtn) defaultBtn.click();
+        // 🚨 수정된 핵심 부분: 정확히 '메뉴 열기(collapsedControl)'만 핀셋으로 집어서 클릭
+        btn.addEventListener('click', (e) => {
+            e.preventDefault(); // 쓸데없는 페이지 이동 방지
+            const sidebarBtn = doc.querySelector('[data-testid="collapsedControl"]');
+            if (sidebarBtn) {
+                sidebarBtn.click();
+            }
         });
         
-        // 화면 가장 바깥쪽(Body)에 찰싹 붙임 (CSS 간섭 원천 차단)
         doc.body.appendChild(btn);
     }
 
-    // 2. 모바일 오토-클로즈 (왼쪽 메뉴 선택 시 스르륵 자동 닫힘)
+    // 2. 모바일 오토-클로즈 (메뉴 선택 시 스르륵 자동 닫힘)
     function setupMobileAutoClose() {
         if (doc.body.clientWidth > 768) return;
         const menuLabels = doc.querySelectorAll('[data-testid="stRadio"] label');
@@ -262,7 +264,6 @@ components.html("""
     setupMobileAutoClose();
 </script>
 """, height=0)
-
 
 # --- [2. 코어 보조 함수 (기능 완전 복원)] ---
 def rerun_app():
