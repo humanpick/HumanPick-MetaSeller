@@ -53,25 +53,30 @@ st.markdown("""
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
     
-    /* Hide Default Elements */
-    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], header[data-testid="stHeader"], [data-testid="stSidebarCollapseButton"] { 
+    /* Hide Default Elements (모바일 헤더와 메뉴 버튼은 살림) */
+    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], footer { 
         display: none !important; 
     }
+    
+    /* 🚨 모바일 UX: 헤더 배경은 투명하게, 햄버거 버튼은 퍼플색으로 강조 */
+    header[data-testid="stHeader"] { background: transparent !important; }
+    button[kind="header"] { color: #8B5CF6 !important; }
 
     /* Premium Dark Theme Core */
     .stApp { background-color: #09090b !important; }
     p, label, span { color: #a1a1aa !important; margin-bottom: 0 !important; }
     h1 { color: #fafafa !important; font-weight: 700 !important; font-size: 1.75rem !important; letter-spacing: -0.02em; margin-bottom: 1.5rem !important; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem !important; }
     
-    /* Layout Balancing (Zero-Scroll 지향 max-width 1400px) */
+    /* Layout Balancing */
     .block-container {
         padding-top: 3rem !important; 
         padding-bottom: 3rem !important; 
-        padding-left: 4rem !important;
-        padding-right: 4rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
         max-width: 1400px !important;
         margin: 0 auto;
     }
+    @media (min-width: 768px) { .block-container { padding-left: 4rem !important; padding-right: 4rem !important; } }
     div[data-testid="stVerticalBlock"] { gap: 1.2rem !important; }
 
     /* Sidebar Refinement */
@@ -112,7 +117,7 @@ st.markdown("""
     [data-testid="stRadio"] div[role="radiogroup"] label div[data-testid="stMarkdownContainer"] { pointer-events: none; }
     [data-testid="stRadio"] div[role="radiogroup"] label div[data-baseweb="radio"] { display: none !important; }
 
-    /* Modern Inputs (White Form & Black Text 완벽 수정본) */
+    /* Modern Inputs */
     div[data-baseweb="input"] > div, 
     div[data-baseweb="textarea"] > div, 
     div[data-baseweb="select"] > div {
@@ -121,101 +126,89 @@ st.markdown("""
         border-radius: 8px !important; 
         transition: border-color 0.2s, box-shadow 0.2s;
     }
-    
     div[data-baseweb="input"]:focus-within > div, 
     div[data-baseweb="textarea"]:focus-within > div, 
     div[data-baseweb="select"]:focus-within > div {
         border-color: #8B5CF6 !important; 
         box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3) !important;
     }
-    
-    .stTextInput input, 
-    .stNumberInput input, 
-    .stTextArea textarea, 
-    div[data-baseweb="select"] * { 
-        color: #09090b !important; 
-        -webkit-text-fill-color: #09090b !important; 
-        font-size: 0.95rem !important; 
-        font-weight: 600 !important;
+    .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] * { 
+        color: #09090b !important; -webkit-text-fill-color: #09090b !important; 
+        font-size: 0.95rem !important; font-weight: 600 !important;
     }
-    
-    .stTextInput input, 
-    .stNumberInput input, 
-    .stTextArea textarea {
-        background-color: transparent !important;
-    }
-    
+    .stTextInput input, .stNumberInput input, .stTextArea textarea { background-color: transparent !important; }
     ::placeholder { color: #a1a1aa !important; -webkit-text-fill-color: #a1a1aa !important; font-weight: 400 !important; }
     div[data-baseweb="input"] svg, div[data-baseweb="select"] svg { color: #52525b !important; fill: #52525b !important; }
-    
     ul[role="listbox"], ul[role="listbox"] * { 
-        background-color: #FFFFFF !important; 
-        color: #000000 !important; 
-        -webkit-text-fill-color: #000000 !important; 
-        font-weight: 600 !important; 
+        background-color: #FFFFFF !important; color: #000000 !important; 
+        -webkit-text-fill-color: #000000 !important; font-weight: 600 !important; 
     }
 
-    /* Refined Buttons (줄바꿈 방지 및 핏 조절 완료) */
+    /* Refined Buttons */
     .stButton>button {
-        background: #18181b !important; 
-        color: #fafafa !important; -webkit-text-fill-color: #fafafa !important; 
-        border: 1px solid rgba(255,255,255,0.1) !important; 
-        border-radius: 8px !important;
-        padding: 0.5rem 0.4rem !important;
-        font-weight: 500 !important; 
-        font-size: 0.85rem !important;
-        white-space: nowrap !important;
-        letter-spacing: -0.3px !important;
-        transition: all 0.2s ease; width: 100%;
+        background: #18181b !important; color: #fafafa !important; -webkit-text-fill-color: #fafafa !important; 
+        border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 8px !important;
+        padding: 0.5rem 0.4rem !important; font-weight: 500 !important; font-size: 0.85rem !important;
+        white-space: nowrap !important; letter-spacing: -0.3px !important; transition: all 0.2s ease; width: 100%;
     }
     .stButton>button:hover { background: #27272a !important; border-color: rgba(255,255,255,0.2) !important; }
     
-    /* Primary Call-to-Action (Submit Buttons) */
+    /* Submit Buttons */
     .stFormSubmitButton>button {
-        background: #fafafa !important; 
-        color: #09090b !important; -webkit-text-fill-color: #09090b !important; 
-        border: none !important; 
-        border-radius: 8px !important; width: 100%;
-        font-weight: 600 !important; 
-        white-space: nowrap !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: #fafafa !important; color: #09090b !important; -webkit-text-fill-color: #09090b !important; 
+        border: none !important; border-radius: 8px !important; width: 100%;
+        font-weight: 600 !important; white-space: nowrap !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .stFormSubmitButton>button:hover { opacity: 0.9; transform: translateY(-1px); }
 
-    /* SaaS Dashboard Cards (Replaces Glass-cards) */
+    /* SaaS Dashboard Cards */
     .glass-card { 
-        background: #121214; 
-        border: 1px solid rgba(255, 255, 255, 0.08); 
-        border-radius: 12px; 
-        padding: 24px; 
-        box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5); 
-        margin-bottom: 16px;
+        background: #121214; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; 
+        padding: 24px; box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5); margin-bottom: 16px;
     }
     .glass-card h3 { font-size: 1.05rem; font-weight: 600; color: #fafafa; margin-bottom: 12px; border: none; padding: 0;}
     .glass-card p { font-size: 0.9rem; color: #a1a1aa; line-height: 1.6; margin-bottom: 0px;}
     
-    /* Highlight & Data Modules */
     .highlight-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 24px; text-align: center; }
     .highlight-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 8px; }
     .highlight-value { font-size: 2.5rem; font-weight: 700; color: #fafafa; letter-spacing: -0.02em; }
     
-    /* Alert Customization */
     [data-testid="stAlert"] { background-color: transparent !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 8px !important; }
     [data-testid="stAlert"] p { color: #fafafa !important; }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #09090b; }
-    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-    
-    /* DataFrame */
     [data-testid="stDataFrame"] { background-color: transparent !important; }
-    
-    /* st.form 테두리 제거 */
     [data-testid="stForm"] { border: none !important; padding: 0; background: transparent; }
 </style>
 """, unsafe_allow_html=True)
+
+# 🚨 [신규: 모바일 오토-클로즈 스크립트] 
+# 모바일에서 라디오버튼(메뉴) 클릭 시 사이드바를 자동으로 닫습니다.
+import streamlit.components.v1 as components
+components.html("""
+<script>
+    const doc = window.parent.document;
+    function setupMobileAutoClose() {
+        const mediaQuery = window.matchMedia('(max-width: 768px)');
+        if (!mediaQuery.matches) return; // PC에서는 무시
+
+        const menuLabels = doc.querySelectorAll('[data-testid="stRadio"] label');
+        menuLabels.forEach(label => {
+            if (!label.classList.contains('auto-close-bound')) {
+                label.classList.add('auto-close-bound');
+                label.addEventListener('click', () => {
+                    const closeBtn = doc.querySelector('[data-testid="stSidebarCollapseButton"]');
+                    if (closeBtn) {
+                        setTimeout(() => closeBtn.click(), 150); // 메뉴 선택 시 즉시 닫기
+                    }
+                });
+            }
+        });
+    }
+    const observer = new MutationObserver(setupMobileAutoClose);
+    observer.observe(doc.body, { childList: true, subtree: true });
+    setupMobileAutoClose();
+</script>
+""", height=0)
+
 
 # --- [2. 코어 보조 함수 (기능 완전 복원)] ---
 def rerun_app():
@@ -294,7 +287,6 @@ def fetch_sourcing_db():
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
 
-# 💡 [신규 추가: 회원 관리용 DB 연동 함수]
 def get_member_worksheet():
     try:
         if "gcp_service_account" in st.secrets:
@@ -305,7 +297,6 @@ def get_member_worksheet():
             creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
 
         client = gspread.authorize(creds)
-        # 기존 소싱 DB 파일에 '회원관리' 탭 생성 (동일 ID 사용)
         sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
         spreadsheet = client.open_by_key(sheet_id)
 
@@ -421,7 +412,7 @@ with st.sidebar:
         menu = st.radio("hidden_label", [
             "🚀 시스템 홈 (대시보드)",
             "🗂️ 소싱 DB 관리",
-            "👥 회원 관리 (어드민)",  # 💡 신규 메뉴 추가됨
+            "👥 회원 관리 (어드민)", 
             "🧪 키워드 분석 (트렌드 발굴)", 
             "🛑 지재권 리스크 스캐너", 
             "🏭 공장 판별기 (도매처 검증)", 
@@ -556,7 +547,6 @@ elif "작업 모드" in st.session_state.mode:
         </div>
         """, unsafe_allow_html=True)
 
-    # 💡 [신규 메뉴 블록: 회원 관리]
     elif menu == "👥 회원 관리 (어드민)":
         st.markdown("<h1>💎 MetaSeller 회원 관리 시스템</h1>", unsafe_allow_html=True)
         
