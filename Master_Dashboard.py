@@ -1,10 +1,8 @@
 import streamlit as st
 import os
-import subprocess
 import requests 
 import warnings
 import pandas as pd
-import sys
 import time
 import math
 import json
@@ -16,26 +14,14 @@ from io import BytesIO
 
 warnings.filterwarnings("ignore")
 
-# --- [0. 필수 라이브러리 자동 설치] ---
-def install_packages():
-    required = {"pandas", "openpyxl", "PyPDF2", "gspread", "oauth2client", "Pillow", "supabase"}
-    installed = {pkg.split('==')[0] for pkg in subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().split('\n')}
-    missing = required - installed
-    if missing:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
-        except: pass
-
-if 'init_setup_done' not in st.session_state:
-    install_packages()
-    st.session_state.init_setup_done = True
-
+# --- [0. 필수 라이브러리 체크 (클라우드 환경)] ---
+# requirements.txt를 통해 설치되도록 자동 설치 코드를 제거했습니다.
 try:
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
     from supabase import create_client, Client
 except ImportError:
-    st.error("🚨 필수 라이브러리 설치 중입니다. 잠시 후 새로고침 해주세요.")
+    st.error("🚨 서버에서 필수 부품(Supabase 등)을 조립 중입니다. 약 1~2분 뒤에 화면을 새로고침(F5) 해주세요!")
     st.stop()
 
 # --- [1. 디자인 시스템 (Humanpick v1.0) & 모바일 에러 픽스] ---
@@ -48,7 +34,7 @@ st.markdown("""
     * { font-family: 'Pretendard', sans-serif !important; }
     .stApp { background-color: #0B1120 !important; } /* Humanpick 네이비 배경 */
     
-    /* 🚨 나노 단위 픽스: 상단바 배경은 투명하게, 쓸데없는 버튼만 핀셋 제거 */
+    /* 🚨 모바일 햄버거 버튼 살리기: 상단바 배경 투명, 쓸데없는 버튼만 제거 */
     header[data-testid="stHeader"] { background: transparent !important; }
     #MainMenu, footer, [data-testid="stAppDeployButton"], .stDeployButton { display: none !important; }
     
@@ -190,7 +176,6 @@ elif menu == "👥 회원 관리 (Supabase)":
 elif menu == "💰 정밀 마진 계산기":
     st.markdown("<h1>💰 정밀 마진 계산기</h1>", unsafe_allow_html=True)
     st.info("상품 소싱 시 원가와 물류비를 정밀하게 계산합니다.")
-    # 마진 계산기 기본 폼 유지
     with st.form("margin_form"):
         col1, col2 = st.columns(2)
         with col1:
