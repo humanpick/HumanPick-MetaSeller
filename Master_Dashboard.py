@@ -40,7 +40,7 @@ except ImportError:
     st.error("🚨 필수 라이브러리 설치 필요. cmd창에서 입력: pip install pandas openpyxl PyPDF2 gspread oauth2client Pillow")
     st.stop()
 
-# --- [1. 하이엔드 SaaS 디자인 시스템 적용] ---
+# --- [1. 하이엔드 SaaS 디자인 시스템 적용 (Humanpick v1.0)] ---
 st.set_page_config(page_title="MetaSeller v4.0", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -155,18 +155,16 @@ st.markdown("""
         font-weight: 600 !important; 
     }
 
-    /* ========================================================
-       Refined Buttons (줄바꿈 방지 및 핏 조절 완료)
-       ======================================================== */
+    /* Refined Buttons (줄바꿈 방지 및 핏 조절 완료) */
     .stButton>button {
         background: #18181b !important; 
         color: #fafafa !important; -webkit-text-fill-color: #fafafa !important; 
         border: 1px solid rgba(255,255,255,0.1) !important; 
         border-radius: 8px !important;
-        padding: 0.5rem 0.4rem !important; /* 패딩을 약간 줄여 핏을 맞춤 */
+        padding: 0.5rem 0.4rem !important;
         font-weight: 500 !important; 
-        font-size: 0.85rem !important; /* 폰트 사이즈 최적화 */
-        white-space: nowrap !important; /* 글자 줄바꿈 강제 방지 */
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
         letter-spacing: -0.3px !important;
         transition: all 0.2s ease; width: 100%;
     }
@@ -179,11 +177,10 @@ st.markdown("""
         border: none !important; 
         border-radius: 8px !important; width: 100%;
         font-weight: 600 !important; 
-        white-space: nowrap !important; /* 글자 줄바꿈 강제 방지 */
+        white-space: nowrap !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .stFormSubmitButton>button:hover { opacity: 0.9; transform: translateY(-1px); }
-    /* ======================================================== */
 
     /* SaaS Dashboard Cards (Replaces Glass-cards) */
     .glass-card { 
@@ -214,6 +211,9 @@ st.markdown("""
     
     /* DataFrame */
     [data-testid="stDataFrame"] { background-color: transparent !important; }
+    
+    /* st.form 테두리 제거 */
+    [data-testid="stForm"] { border: none !important; padding: 0; background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -293,6 +293,30 @@ def fetch_sourcing_db():
             df = pd.read_csv("backup_sourcing.csv", names=["저장 시간", "상품명/분류", "소싱 등급", "판독 리포트", "원문/에러 데이터"])
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
+
+# 💡 [신규 추가: 회원 관리용 DB 연동 함수]
+def get_member_worksheet():
+    try:
+        if "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        else:
+            if not os.path.exists("credentials.json"): return None
+            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+
+        client = gspread.authorize(creds)
+        # 기존 소싱 DB 파일에 '회원관리' 탭 생성 (동일 ID 사용)
+        sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
+        spreadsheet = client.open_by_key(sheet_id)
+
+        try:
+            worksheet = spreadsheet.worksheet("회원관리")
+        except gspread.exceptions.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=6)
+            worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일"])
+        return worksheet
+    except Exception as e:
+        return None
 
 def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
     if not api_key: return "❌ API 키가 없습니다."
@@ -397,6 +421,7 @@ with st.sidebar:
         menu = st.radio("hidden_label", [
             "🚀 시스템 홈 (대시보드)",
             "🗂️ 소싱 DB 관리",
+            "👥 회원 관리 (어드민)",  # 💡 신규 메뉴 추가됨
             "🧪 키워드 분석 (트렌드 발굴)", 
             "🛑 지재권 리스크 스캐너", 
             "🏭 공장 판별기 (도매처 검증)", 
@@ -410,7 +435,6 @@ with st.sidebar:
 
     st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
     
-    # 💡 [API Key 영구 보존 로직 추가]
     key_file_path = os.path.join(os.getcwd(), ".api_key")
     if "api_key_input" not in st.session_state:
         if os.path.exists(key_file_path):
@@ -424,7 +448,6 @@ with st.sidebar:
     api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="API 키를 입력하세요")
     selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
     
-    # 💡 [버튼 크기 안정화 레이아웃: 비율 조절]
     c1, c2 = st.columns([1, 1.35]) 
     with c1:
         if st.button("💾 키 저장"): 
@@ -532,6 +555,50 @@ elif "작업 모드" in st.session_state.mode:
             </a>
         </div>
         """, unsafe_allow_html=True)
+
+    # 💡 [신규 메뉴 블록: 회원 관리]
+    elif menu == "👥 회원 관리 (어드민)":
+        st.markdown("<h1>💎 MetaSeller 회원 관리 시스템</h1>", unsafe_allow_html=True)
+        
+        ws = get_member_worksheet()
+        if ws is None:
+            st.error("🚨 구글 시트 연결에 실패했습니다. (secrets.toml 설정 확인)")
+        else:
+            data = ws.get_all_records()
+            df = pd.DataFrame(data)
+
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #38BDF8;'>현재 등록된 회원 목록</h3>", unsafe_allow_html=True)
+            if not df.empty:
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            else:
+                st.info("아직 등록된 회원이 없습니다.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #EC4899;'>신규 회원 권한 발급</h3>", unsafe_allow_html=True)
+
+            with st.form(key='add_member_form', clear_on_submit=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    new_id = st.text_input("아이디 (이메일)")
+                    new_pw = st.text_input("비밀번호 설정", type="password")
+                with col2:
+                    new_name = st.text_input("이름 / 회사명")
+                    status = st.selectbox("상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"])
+                    
+                submit_btn = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
+                
+                if submit_btn:
+                    if new_id.strip() == "" or new_pw.strip() == "":
+                        st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
+                    else:
+                        today = datetime.now().strftime("%Y-%m-%d")
+                        ws.append_row([new_id, new_pw, new_name, status, "2026-12-31", today])
+                        st.success(f"[{new_name}] 님의 권한이 성공적으로 발급되어 시트에 자동 저장되었습니다!")
+                        time.sleep(1) 
+                        rerun_app() 
+            st.markdown("</div>", unsafe_allow_html=True)
 
     elif menu == "🧪 키워드 분석 (트렌드 발굴)":
         st.markdown("<h1>트렌드 키워드 분석 & 번역</h1>", unsafe_allow_html=True)
