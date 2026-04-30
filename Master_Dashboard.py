@@ -29,48 +29,65 @@ st.set_page_config(page_title="MetaSeller v4.0", layout="wide", initial_sidebar_
 
 st.markdown("""
 <style>
+    /* 폰트 강제 적용 */
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    
     * { font-family: 'Pretendard', sans-serif !important; }
-    .stApp { background-color: #0B1120 !important; } /* Humanpick 네이비 배경 */
     
-    /* 🚨 모바일 햄버거 버튼 살리기: 상단바 배경 투명, 쓸데없는 버튼만 제거 */
-    header[data-testid="stHeader"] { background: transparent !important; }
-    #MainMenu, footer, [data-testid="stAppDeployButton"], .stDeployButton { display: none !important; }
-    
-    /* 모바일 햄버거 버튼 색상 포인트 (퍼플) */
-    button[kind="header"] { color: #8B5CF6 !important; }
+    /* 1. 전체 다크 모드 기반 사이버펑크 & 글래스모피즘 */
+    .stApp, [data-testid="stAppViewContainer"] { background-color: #0B1120 !important; }
+    [data-testid="stSidebar"] { background-color: #0A0F1C !important; border-right: 1px solid rgba(255,255,255,0.05); }
+    h1, h2, h3, h4, p, span, label { color: #ffffff !important; }
 
-    /* 글래스 카드 룩 */
-    .glass-card { 
-        background: rgba(255, 255, 255, 0.05); 
-        backdrop-filter: blur(12px); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        border-radius: 12px; 
-        padding: 24px; 
-        margin-bottom: 16px; 
-        box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5); 
+    /* 2. 상하단 메뉴 및 잡다한 아이콘 영구 숨김 */
+    header[data-testid="stHeader"] { background: transparent !important; }
+    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, footer { display: none !important; }
+    button[kind="header"] { color: #8B5CF6 !important; } /* 모바일 햄버거 버튼만 퍼플색으로 유지 */
+
+    /* 3. 사이드바 라디오 버튼 커스텀 (원형 숨김 & 글로우 카드 변형) */
+    div[role="radiogroup"] > label > div:first-child { display: none !important; } 
+    div[role="radiogroup"] > label {
+        background: rgba(255,255,255,0.03) !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 8px !important;
+        transition: all 0.3s ease !important;
+        border: 1px solid transparent !important;
     }
-    .glass-card h3 { color: #fafafa; margin-bottom: 12px; }
-    
-    /* 화이트 폼 & 블랙 텍스트 */
-    div[data-baseweb="input"] > div, div[data-baseweb="select"] > div { background-color: #ffffff !important; border-radius: 8px !important; }
-    input, select, .stTextArea textarea { color: #000000 !important; font-weight: 600 !important; }
-    
-    /* 버튼 스타일 (퍼플/인디고 그라데이션) */
+    div[role="radiogroup"] > label[data-checked="true"] {
+        background: linear-gradient(90deg, #8B5CF6, #EC4899) !important;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.4) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+    }
+
+    /* 4. 화이트 폼 (White Form) 규칙 적용 */
+    div[data-baseweb="input"] > div, div[data-baseweb="select"] > div { 
+        background-color: #ffffff !important; 
+        border-radius: 8px !important; 
+    }
+    input, select, .stTextArea textarea { 
+        color: #000000 !important; 
+        font-weight: 600 !important; 
+    }
+    /* 포커스 시 보라색 네온 섀도우 */
+    div[data-baseweb="input"]:focus-within > div {
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.8) !important;
+        border-color: #8B5CF6 !important;
+    }
+
+    /* 5. 버튼 스타일링 (퍼플/인디고 부상 효과) */
     .stButton>button { 
-        background: linear-gradient(90deg, #8B5CF6, #EC4899) !important; 
+        background: linear-gradient(90deg, #8B5CF6, #38BDF8) !important; 
         color: white !important; 
         border: none !important; 
         border-radius: 8px !important; 
         width: 100%; 
-        transition: transform 0.2s; 
-        font-weight: bold;
+        transition: transform 0.2s !important; 
+        font-weight: bold !important;
     }
-    .stButton>button:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
-    
-    /* DataFrame 투명화 */
-    [data-testid="stDataFrame"] { background-color: transparent !important; }
+    .stButton>button:hover { 
+        transform: translateY(-3px) !important; 
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5) !important; 
+    }
 </style>
 """, unsafe_allow_html=True)
 
