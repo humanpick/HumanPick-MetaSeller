@@ -1,7 +1,7 @@
-﻿streamlit
 pandas
 openpyxl
 PyPDF2
 gspread
 oauth2client
 Pillow
+supabase
