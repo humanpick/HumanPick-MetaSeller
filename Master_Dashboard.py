@@ -203,25 +203,56 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🚨 [신규: 모바일 오토-클로즈 스크립트] 
-# 모바일에서 라디오버튼(메뉴) 클릭 시 사이드바를 자동으로 닫습니다.
+# 🚨 [신규: 모바일 오토-클로즈 및 커스텀 메뉴 버튼 통합 스크립트] 
 import streamlit.components.v1 as components
 components.html("""
 <script>
     const doc = window.parent.document;
-    function setupMobileAutoClose() {
-        const mediaQuery = window.matchMedia('(max-width: 768px)');
-        if (!mediaQuery.matches) return; // PC에서는 무시
+    
+    // 1. 모바일 전용 보라색 플로팅 버튼 강제 생성 (CSS 무시하고 화면 최상단에 직접 부착)
+    if (!doc.getElementById('humanpick-mobile-btn')) {
+        const btn = doc.createElement('button');
+        btn.id = 'humanpick-mobile-btn';
+        btn.innerHTML = '☰';
+        
+        // Humanpick 시그니처 스타일 강제 적용
+        Object.assign(btn.style, {
+            position: 'fixed', top: '15px', left: '15px', zIndex: '999999',
+            background: '#8B5CF6', color: '#ffffff', border: 'none',
+            borderRadius: '8px', width: '42px', height: '42px',
+            fontSize: '22px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.5)',
+            cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center'
+        });
+        
+        // 모바일 화면(768px 이하)일 때만 나타나도록 설정
+        const toggleVisibility = () => {
+            const isMobile = doc.body.clientWidth <= 768;
+            btn.style.display = isMobile ? 'flex' : 'none';
+        };
+        
+        doc.defaultView.addEventListener('resize', toggleVisibility);
+        toggleVisibility();
+        
+        // 버튼 터치 시, 스트림릿이 숨겨둔 원래 사이드바 버튼을 자바스크립트로 강제 클릭시킴
+        btn.addEventListener('click', () => {
+            const defaultBtn = doc.querySelector('button[kind="header"]') || doc.querySelector('[data-testid="collapsedControl"]');
+            if (defaultBtn) defaultBtn.click();
+        });
+        
+        // 화면 가장 바깥쪽(Body)에 찰싹 붙임 (CSS 간섭 원천 차단)
+        doc.body.appendChild(btn);
+    }
 
+    // 2. 모바일 오토-클로즈 (왼쪽 메뉴 선택 시 스르륵 자동 닫힘)
+    function setupMobileAutoClose() {
+        if (doc.body.clientWidth > 768) return;
         const menuLabels = doc.querySelectorAll('[data-testid="stRadio"] label');
         menuLabels.forEach(label => {
             if (!label.classList.contains('auto-close-bound')) {
                 label.classList.add('auto-close-bound');
                 label.addEventListener('click', () => {
                     const closeBtn = doc.querySelector('[data-testid="stSidebarCollapseButton"]');
-                    if (closeBtn) {
-                        setTimeout(() => closeBtn.click(), 150); // 메뉴 선택 시 즉시 닫기
-                    }
+                    if (closeBtn) setTimeout(() => closeBtn.click(), 150);
                 });
             }
         });
