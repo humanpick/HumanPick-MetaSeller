@@ -53,9 +53,12 @@ st.markdown("""
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
     
-    /* Hide Default Elements */
-    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], header[data-testid="stHeader"], [data-testid="stSidebarCollapseButton"] { 
+    /* Hide Default Elements (모바일 사이드바 열기 버튼 복구) */
+    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"] { 
         display: none !important; 
+    }
+    header[data-testid="stHeader"] { 
+        background: transparent !important; 
     }
 
     /* Premium Dark Theme Core */
