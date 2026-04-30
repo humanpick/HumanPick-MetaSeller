@@ -58,9 +58,32 @@ st.markdown("""
         display: none !important; 
     }
     
-    /* 🚨 모바일 UX: 헤더 배경은 투명하게, 햄버거 버튼은 퍼플색으로 강조 */
-    header[data-testid="stHeader"] { background: transparent !important; }
-    button[kind="header"] { color: #8B5CF6 !important; }
+    /* 🚨 모바일 UX: 사이드바 열기 버튼 강제 플로팅 버튼화 */
+    header[data-testid="stHeader"] { 
+        background: transparent !important; 
+        pointer-events: none !important; /* 투명한 헤더가 터치를 방해하지 않도록 설정 */
+    }
+    
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        background: #8B5CF6 !important; /* Humanpick 시그니처 퍼플 */
+        border-radius: 8px !important;
+        margin: 12px !important;
+        pointer-events: auto !important; /* 버튼 영역만 터치 활성화 */
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
+        transition: transform 0.2s ease !important;
+    }
+    
+    [data-testid="collapsedControl"]:active {
+        transform: scale(0.9) !important;
+    }
+    
+    [data-testid="collapsedControl"] svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        width: 24px !important;
+        height: 24px !important;
+    }
 
     /* Premium Dark Theme Core */
     .stApp { background-color: #09090b !important; }
