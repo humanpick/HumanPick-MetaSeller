@@ -293,7 +293,6 @@ def fetch_sourcing_db():
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
 
-# 🚨 [신규] 트래픽 혼잡 시 자동 우회(Failover) 기능이 적용된 AI 엔진
 def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
     if not api_key: return "❌ API 키가 없습니다."
     try:
@@ -301,14 +300,11 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         res = requests.get(models_url)
         if res.status_code != 200: return f"❌ API 키 인증 실패 (HTTP {res.status_code})\n\n[디버그]\n{res.text}"
         
-        # 구글 계정에서 현재 사용 가능한 모든 최신 모델을 스캔합니다.
         available_names = [m['name'].split('/')[-1] for m in res.json().get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         
-        # '자동' 선택 시 트래픽 우회를 위한 모델 우선순위 큐 설정
         if selected_model == "자동 (권장)":
             priority = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']
             targets = [m for m in priority if m in available_names]
-            # 우선순위에 없는 나머지 모델도 후순위 보험용으로 모두 추가
             for m in available_names:
                 if m not in targets: targets.append(m)
         else:
@@ -320,7 +316,6 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         data = {"contents": [{"parts": [{"text": prompt}]}]}
         last_error = ""
         
-        # 최대 5번의 전체 사이클(모든 모델을 번갈아가며 찌르기) 시도
         max_overall_retries = 5 
         
         for cycle in range(max_overall_retries):
@@ -334,7 +329,6 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                     else: return f"❌ 답변 생성 불가. (사유: {candidate.get('finishReason', '알 수 없음')})"
                 
                 elif gen_res.status_code in [503, 429]: 
-                    # 🚨 [핵심] 트래픽 지연 발생 시 지체하지 않고 즉시 다음 모델로 우회
                     last_error = f"{target} (트래픽 지연 발생 -> 우회 중...)"
                     continue 
                 else: 
@@ -343,7 +337,6 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                     last_error = f"{target} (HTTP {gen_res.status_code}: {err_msg})"
                     continue
             
-            # 모든 모델이 다 막혔을 최악의 경우에만 3초 숨 고르기 후 재시작
             time.sleep(3)
             
         return f"⚠️ 전체 AI 서버 트래픽 혼잡 (재시도 초과)\n\n[마지막 로그]\n{last_error}"
@@ -467,8 +460,6 @@ with st.sidebar:
         else: st.session_state.api_key_input = ""
             
     st.markdown("<p style='font-size:0.75rem; color:#52525b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; padding-left: 12px;'>환경 설정</p>", unsafe_allow_html=True)
-    
-    # 🚨 [신규] 셀렉트박스 옵션에 신규 모델 명시적 추가
     api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="API 키를 입력하세요")
     selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-2.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
     
@@ -688,11 +679,12 @@ elif "작업 모드" in st.session_state.mode:
                             with kw_cols[i]:
                                 st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
                                 
+                            # 🚨 [신규] 구글 시트 하이퍼링크(HYPERLINK) 함수 적용 (클릭 시 바로 이동)
                             is_saved, err_msg = save_to_google_sheet(
                                 f"키워드: {keyword_input_val} ({name})", 
                                 "키워드분석", 
                                 f"기본 번역: {trans}", 
-                                f"{search_query} ({link})"
+                                f'=HYPERLINK("{link}", "🔗 {search_query} 타오바오 검색")'
                             )
                             if is_saved: save_success_count += 1
                         
