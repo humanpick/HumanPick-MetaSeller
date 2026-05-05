@@ -646,7 +646,6 @@ elif "작업 모드" in st.session_state.mode:
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
                     if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
                     else:
-                        # 🚨 [신규] 강력하고 유연한 파싱 엔진 (AI 환각 대응)
                         trans, s1, s2, s3 = "", "", "", ""
                         clean_res = res.replace('**', '').replace('- ', '').replace('* ', '')
                         for line in clean_res.split('\n'):
@@ -658,21 +657,31 @@ elif "작업 모드" in st.session_state.mode:
 
                         st.success(f"✅ 연성 완료! (중국어 기본 번역: **{trans}**)")
                         strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
-                        db_save_text = f"[기본 번역] {trans} | "
                         
                         kw_cols = st.columns(3)
+                        
+                        # 🚨 [신규] 각각의 전략을 3개의 분리된 줄(Row)로 개별 저장하는 로직
+                        save_success_count = 0
                         for i, (name, search_query) in enumerate(strategies):
                             if not search_query: continue
                             link = f"https://s.taobao.com/search?q={quote(search_query)}"
-                            db_save_text += f"{name.split(' ')[1]}: {search_query} ({link}) | "
+                            
                             with kw_cols[i]:
                                 st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
                                 
-                        is_saved, err_msg = save_to_google_sheet(f"키워드: {keyword_input_val}", "키워드분석", f"기본 번역: {trans}", db_save_text)
-                        if is_saved: 
+                            # DB에 1줄씩 개별 전송
+                            is_saved, err_msg = save_to_google_sheet(
+                                f"키워드: {keyword_input_val} ({name})", 
+                                "키워드분석", 
+                                f"기본 번역: {trans}", 
+                                f"{search_query} ({link})"
+                            )
+                            if is_saved: save_success_count += 1
+                        
+                        if save_success_count > 0: 
                             st.cache_data.clear()
-                            st.info("💾 소싱 DB에 황금 키워드가 성공적으로 자동 저장되었습니다!")
-                        else: st.error(f"⚠️ 구글 시트 자동 저장 실패: {err_msg}")
+                            st.info(f"💾 소싱 DB에 {save_success_count}개의 전략 키워드가 개별 분리되어 성공적으로 저장되었습니다!")
+                        else: st.error("⚠️ 구글 시트 자동 저장 실패")
 
     elif menu == "🛑 지재권 리스크 스캐너":
         st.markdown("<h1>지재권 리스크 스캐너</h1>", unsafe_allow_html=True)
