@@ -227,7 +227,8 @@ def parse_korean_currency(val_str):
         return int(clean_str) if clean_str else 0
     except ValueError: return 0
 
-def save_to_google_sheet(item_name, grade, reason, detail_data):
+# 🚨 [수정] target_sheet 파라미터 추가하여 시트를 분리할 수 있도록 개선
+def save_to_google_sheet(item_name, grade, reason, detail_data, target_sheet=None):
     try:
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
@@ -240,13 +241,16 @@ def save_to_google_sheet(item_name, grade, reason, detail_data):
         client = gspread.authorize(creds)
         sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
         spreadsheet = client.open_by_key(sheet_id)
-        current_month = datetime.now().strftime("%Y%m")
+        
+        # 특정 시트명(target_sheet)이 지정되었으면 그 시트를 사용, 아니면 현재 월(Month) 시트 사용
+        sheet_title = target_sheet if target_sheet else datetime.now().strftime("%Y%m")
         
         existing_sheets = [ws.title for ws in spreadsheet.worksheets()]
-        if current_month not in existing_sheets:
-            worksheet = spreadsheet.add_worksheet(title=current_month, rows=1000, cols=5)
+        if sheet_title not in existing_sheets:
+            worksheet = spreadsheet.add_worksheet(title=sheet_title, rows=1000, cols=5)
             worksheet.append_row(["저장 시간", "상품명/분류", "소싱 등급", "판독/요약 리포트", "원문/상세 데이터"])
-        else: worksheet = spreadsheet.worksheet(current_month)
+        else: 
+            worksheet = spreadsheet.worksheet(sheet_title)
             
         worksheet.append_row(
             [datetime.now().strftime("%Y-%m-%d %H:%M"), item_name, grade, reason, detail_data],
@@ -657,7 +661,6 @@ elif "작업 모드" in st.session_state.mode:
             elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
             else:
                 with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
-                    # 🚨 [신규 필터 적용] AI에게 무조건 '중국어 한자(간체자)'로만 출력하라고 절대 명령 추가
                     prompt = f"당신은 중국 타오바오(Taobao) 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 검색용으로 번역하세요.\n"
                     prompt += "3가지 소싱 전략에 맞춰 '타오바오에 복사해서 즉시 검색할 수 있는 순수 중국어 간체자 키워드'만 생성하세요.\n"
                     prompt += "★경고: 영어, 한국어, 병음(Pinyin), 괄호, 부연 설명은 절대 출력하지 마세요! 오직 중국어 한자만 출력하세요. (단, ins, usb 같은 상품에 필수적인 영문 부품명은 허용)\n"
@@ -675,7 +678,6 @@ elif "작업 모드" in st.session_state.mode:
                             elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
                             elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
 
-                        # 🚨 [신규 필터 2차 방어] 파이썬에서도 한글 및 불필요한 특수문자 강제 삭제
                         def clean_cn_keyword(text):
                             cleaned = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', text).strip()
                             return ' '.join(cleaned.split()) if cleaned else text
@@ -732,7 +734,6 @@ elif "작업 모드" in st.session_state.mode:
                                 try: df = pd.read_csv(file_path, encoding='cp949', on_bad_lines='skip')
                                 except: df = pd.read_csv(file_path, encoding='euc-kr', on_bad_lines='skip')
                         
-                        # 🚨 [신규 필터 적용] float(숫자, 빈칸) 에러 방어 로직 적용
                         found = []
                         for col in df.columns:
                             for val in df[col]:
@@ -770,10 +771,18 @@ elif "작업 모드" in st.session_state.mode:
                                     level = data.get("Level", "위험")
                                     border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
                                     st.markdown(f"<div class='glass-card' style='border-left: 4px solid {border_color};'><h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div><div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'><span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span></div></div>", unsafe_allow_html=True)
-                                    is_saved, err_msg = save_to_google_sheet(keyword_input_ai, f"법무진단: {level}", data.get('Final_Action', ''), f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}")
+                                    
+                                    # 🚨 [신규] 법무 진단 결과는 월별 시트가 아닌 '지재권리스트' 전용 시트로 분리 저장
+                                    is_saved, err_msg = save_to_google_sheet(
+                                        keyword_input_ai, 
+                                        f"법무진단: {level}", 
+                                        data.get('Final_Action', ''), 
+                                        f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}",
+                                        target_sheet="지재권리스트"
+                                    )
                                     if is_saved: 
                                         st.cache_data.clear()
-                                        st.info("💾 진단 결과가 소싱 DB에 안전하게 자동 저장되었습니다!")
+                                        st.info("💾 진단 결과가 전용 소싱 DB [지재권리스트] 시트에 안전하게 분리 저장되었습니다!")
                                     else: st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
                                 else: st.error("파싱 실패.")
                             except Exception as e: st.error(f"오류: {e}")
@@ -951,7 +960,7 @@ elif "작업 모드" in st.session_state.mode:
             if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
             elif not v_desc and not c_data: st.warning("분석할 데이터를 입력해주세요.")
             else:
-                with st.spinner("경쟁사 전략을 역추적 중..."): 
+                with st.spinner("경쟁사 전략을 역추적 중입니다..."): 
                     st.success(generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model))
 
     elif menu == "📥 영상 분석 추출":
