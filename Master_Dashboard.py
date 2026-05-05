@@ -180,7 +180,6 @@ def get_member_worksheet():
             worksheet = spreadsheet.worksheet("회원관리")
             headers = worksheet.row_values(1)
             if "등급" not in headers:
-                # 🚨 [해결] 기존 시트 열 갯수가 부족하면 열을 추가하여 에러 방지
                 if worksheet.col_count < len(headers) + 1:
                     worksheet.add_cols(1)
                 worksheet.update_cell(1, len(headers) + 1, "등급")
@@ -331,6 +330,26 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         return f"⚠️ 서버 응답 거부 또는 실패\n\n[구글 원본 에러 메시지]\n{last_error}"
     except Exception as e: return f"❌ 통신 시스템 오류: {e}"
 
+# 🚨 [수정] __file__ 로 인한 경로 에러 해결
+@st.cache_data
+def extract_copywriting_materials():
+    base_dir = os.getcwd()  # 서버 환경 호환을 위해 절대 경로 대신 현재 폴더 기준으로 변경
+    target_dir = os.path.join(base_dir, "HQ_Engine", "카피라이팅자료")
+    os.makedirs(target_dir, exist_ok=True)
+    extracted_text, file_list = "", []
+    for filename in os.listdir(target_dir):
+        filepath = os.path.join(target_dir, filename)
+        if os.path.isfile(filepath):
+            file_list.append(filename)
+            try:
+                if filename.lower().endswith('.pdf'):
+                    with open(filepath, 'rb') as f:
+                        for page in PyPDF2.PdfReader(f).pages: extracted_text += (page.extract_text() or "") + "\n"
+                elif filename.lower().endswith('.txt'):
+                    with open(filepath, 'r', encoding='utf-8') as f: extracted_text += f.read() + "\n"
+            except: pass
+    return extracted_text, file_list, target_dir
+
 # --- [3. 시스템 마스터 로그인 및 회원가입 로직] ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'mode' not in st.session_state: st.session_state.mode = "💻 작업 모드 (PC 분석)"
@@ -389,7 +408,6 @@ if not st.session_state.logged_in:
                                     st.error("이미 존재하는 아이디입니다.")
                                 else:
                                     today = datetime.now().strftime("%Y-%m-%d")
-                                    # 열 갯수에 맞게 빈칸 채우기
                                     row_data = [new_uid, new_upw, new_name, "승인대기", "2026-12-31", today, "무료회원"]
                                     if ws.col_count > len(row_data):
                                         row_data.extend([""] * (ws.col_count - len(row_data)))
