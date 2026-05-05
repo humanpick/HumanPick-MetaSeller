@@ -207,7 +207,7 @@ def get_member_worksheet():
         return None, f"5. [치명적 시스템 에러] {str(e)}"
 
 def authenticate_user(uid, upw):
-    if uid == "admin" and upw == "1234":
+    if uid == "minjun" and upw == "gryrary0406**":
         return True, "마스터", "관리자", "VIP회원", ""
 
     ws, error_msg = get_member_worksheet()
