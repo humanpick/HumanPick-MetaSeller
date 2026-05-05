@@ -278,7 +278,7 @@ def get_member_worksheet():
     except Exception as e:
         return None
 
-# 🚨 [신규] DB 연동 다중 로그인 검증 함수
+# 🚨 DB 연동 다중 로그인 검증 함수
 def authenticate_user(uid, upw):
     if uid == "admin" and upw == "1234":
         return True, "마스터", "관리자", ""
@@ -293,7 +293,6 @@ def authenticate_user(uid, upw):
     if df.empty or '아이디' not in df.columns:
         return False, None, None, "등록된 회원 정보가 없습니다."
 
-    # 데이터프레임에서 일치하는 회원 찾기
     user_match = df[(df['아이디'].astype(str) == str(uid)) & (df['비밀번호'].astype(str) == str(upw))]
 
     if user_match.empty:
@@ -511,7 +510,6 @@ if not st.session_state.logged_in:
 with st.sidebar:
     st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v5.0</span></p>", unsafe_allow_html=True)
     
-    # [신규] 로그인 사용자 정보 표시
     st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role})</span></div>", unsafe_allow_html=True)
     
     mode_selection = st.radio("모드 선택", ["🚗 운전 모드 (음성 소싱)", "💻 작업 모드 (PC 분석)"], index=0 if "운전" in st.session_state.mode else 1)
@@ -522,7 +520,7 @@ with st.sidebar:
     if "작업 모드" in st.session_state.mode:
         st.markdown("<div style='height: 16px;'></div><p style='font-size: 0.75rem; color: #52525b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding-left: 12px;'>상세 메뉴</p>", unsafe_allow_html=True)
         
-        # 🚨 [신규] 관리자에게만 '회원 관리' 메뉴 표시
+        # 관리자에게만 '회원 관리' 메뉴 표시
         menu_options = [
             "🚀 시스템 홈 (대시보드)",
             "🗂️ 소싱 DB 관리",
@@ -677,6 +675,7 @@ elif "작업 모드" in st.session_state.mode:
             data = ws.get_all_records()
             df = pd.DataFrame(data)
 
+            # [1] 현재 등록된 회원 목록
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
             st.markdown("<h3 style='color: #38BDF8;'>현재 등록된 회원 목록</h3>", unsafe_allow_html=True)
             if not df.empty:
@@ -685,8 +684,43 @@ elif "작업 모드" in st.session_state.mode:
                 st.info("아직 등록된 회원이 없습니다.")
             st.markdown("</div>", unsafe_allow_html=True)
 
+            # 🚨 [신규] 기존 회원 권한 및 상태 수정 폼
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #EC4899;'>신규 회원 권한 발급 및 관리</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #F59E0B;'>회원 권한 및 상태 수정</h3>", unsafe_allow_html=True)
+            
+            if not df.empty:
+                user_ids = df['아이디'].astype(str).tolist()
+                with st.form("edit_member_status_form"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        target_id = st.selectbox("상태를 변경할 아이디 선택", user_ids)
+                    with col2:
+                        new_status = st.selectbox("새로운 상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"], index=1)
+                        
+                    submit_edit = st.form_submit_button("상태 업데이트 적용 (Auto-Save)")
+                    
+                    if submit_edit:
+                        with st.spinner("DB 업데이트 중..."):
+                            try:
+                                # 1번째 열(아이디)에서 해당 아이디의 행 번호를 찾아 4번째 열(상태)을 수정
+                                id_list = ws.col_values(1)
+                                if target_id in id_list:
+                                    row_idx = id_list.index(target_id) + 1
+                                    ws.update_cell(row_idx, 4, new_status)
+                                    st.success(f"✅ [{target_id}] 님의 권한이 '{new_status}'(으)로 즉시 변경되었습니다!")
+                                    time.sleep(1)
+                                    rerun_app()
+                                else:
+                                    st.error("해당 아이디를 찾을 수 없습니다.")
+                            except Exception as e:
+                                st.error(f"상태 업데이트 실패: {e}")
+            else:
+                st.warning("먼저 회원을 등록해주세요.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            # [3] 신규 회원 직접 발급 (기존 폼)
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #EC4899;'>신규 회원 강제/수동 발급</h3>", unsafe_allow_html=True)
 
             with st.form(key='add_member_form', clear_on_submit=True):
                 col1, col2 = st.columns(2)
@@ -695,11 +729,11 @@ elif "작업 모드" in st.session_state.mode:
                     new_pw = st.text_input("비밀번호 설정", type="password")
                 with col2:
                     new_name = st.text_input("이름 / 회사명")
-                    status = st.selectbox("상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"])
+                    status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
                     
-                submit_btn = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
+                submit_add = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
                 
-                if submit_btn:
+                if submit_add:
                     if new_id.strip() == "" or new_pw.strip() == "":
                         st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
                     else:
