@@ -248,7 +248,11 @@ def save_to_google_sheet(item_name, grade, reason, detail_data):
             worksheet.append_row(["저장 시간", "상품명/분류", "소싱 등급", "판독/요약 리포트", "원문/상세 데이터"])
         else: worksheet = spreadsheet.worksheet(current_month)
             
-        worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), item_name, grade, reason, detail_data])
+        # 🚨 [신규] value_input_option='USER_ENTERED' 옵션을 주어 수식을 텍스트가 아닌 실제 수식(하이퍼링크)으로 인식시킴
+        worksheet.append_row(
+            [datetime.now().strftime("%Y-%m-%d %H:%M"), item_name, grade, reason, detail_data],
+            value_input_option='USER_ENTERED'
+        )
         return True, ""
     except Exception as e:
         df = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), item_name, grade, reason, str(e)]])
@@ -679,12 +683,11 @@ elif "작업 모드" in st.session_state.mode:
                             with kw_cols[i]:
                                 st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
                                 
-                            # 🚨 [신규] 구글 시트 하이퍼링크(HYPERLINK) 함수 적용 (클릭 시 바로 이동)
                             is_saved, err_msg = save_to_google_sheet(
                                 f"키워드: {keyword_input_val} ({name})", 
                                 "키워드분석", 
                                 f"기본 번역: {trans}", 
-                                f'=HYPERLINK("{link}", "🔗 {search_query} 타오바오 검색")'
+                                f'=HYPERLINK("{link}", "🔗 {name.split("/")[0]} 타오바오 검색")'
                             )
                             if is_saved: save_success_count += 1
                         
