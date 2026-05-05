@@ -41,7 +41,7 @@ except ImportError:
     st.stop()
 
 # --- [1. 하이엔드 SaaS 디자인 시스템 적용 (Humanpick v1.0)] ---
-st.set_page_config(page_title="MetaSeller v4.0", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="MetaSeller v5.0", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -53,23 +53,23 @@ st.markdown("""
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
     
-    /* Hide Default Elements (모바일 헤더와 메뉴 버튼은 살림) */
+    /* Hide Default Elements */
     .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], footer { 
         display: none !important; 
     }
     
-    /* 🚨 모바일 UX: 사이드바 열기 버튼 강제 플로팅 버튼화 */
+    /* 모바일 UX: 사이드바 열기 버튼 강제 플로팅 버튼화 */
     header[data-testid="stHeader"] { 
         background: transparent !important; 
-        pointer-events: none !important; /* 투명한 헤더가 터치를 방해하지 않도록 설정 */
+        pointer-events: none !important; 
     }
     
     [data-testid="collapsedControl"] {
         display: flex !important;
-        background: #8B5CF6 !important; /* Humanpick 시그니처 퍼플 */
+        background: #8B5CF6 !important;
         border-radius: 8px !important;
         margin: 12px !important;
-        pointer-events: auto !important; /* 버튼 영역만 터치 활성화 */
+        pointer-events: auto !important; 
         box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
         transition: transform 0.2s ease !important;
     }
@@ -116,7 +116,7 @@ st.markdown("""
         margin-bottom: 0px; 
     }
     
-    /* Navigation Menu (Radio to Clean List) */
+    /* Navigation Menu */
     [data-testid="stRadio"] > label { display: none !important; }
     [data-testid="stRadio"] div[role="radiogroup"] { gap: 4px; }
     [data-testid="stRadio"] div[role="radiogroup"] label {
@@ -203,19 +203,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🚨 [신규: 모바일 오토-클로즈 및 커스텀 메뉴 버튼 통합 스크립트] 
+# 모바일 오토-클로즈 스크립트
 import streamlit.components.v1 as components
 components.html("""
 <script>
     const doc = window.parent.document;
-    
-    // 1. 모바일 전용 보라색 플로팅 버튼 강제 생성
     if (!doc.getElementById('humanpick-mobile-btn')) {
         const btn = doc.createElement('button');
         btn.id = 'humanpick-mobile-btn';
         btn.innerHTML = '☰';
-        
-        // Humanpick 시그니처 스타일 
         Object.assign(btn.style, {
             position: 'fixed', top: '15px', left: '15px', zIndex: '999999',
             background: '#8B5CF6', color: '#ffffff', border: 'none',
@@ -223,29 +219,19 @@ components.html("""
             fontSize: '22px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.5)',
             cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center'
         });
-        
-        // 모바일 화면(768px 이하)일 때만 나타나도록 설정
         const toggleVisibility = () => {
             const isMobile = doc.body.clientWidth <= 768;
             btn.style.display = isMobile ? 'flex' : 'none';
         };
-        
         doc.defaultView.addEventListener('resize', toggleVisibility);
         toggleVisibility();
-        
-        // 🚨 수정된 핵심 부분: 정확히 '메뉴 열기(collapsedControl)'만 핀셋으로 집어서 클릭
         btn.addEventListener('click', (e) => {
-            e.preventDefault(); // 쓸데없는 페이지 이동 방지
+            e.preventDefault();
             const sidebarBtn = doc.querySelector('[data-testid="collapsedControl"]');
-            if (sidebarBtn) {
-                sidebarBtn.click();
-            }
+            if (sidebarBtn) { sidebarBtn.click(); }
         });
-        
         doc.body.appendChild(btn);
     }
-
-    // 2. 모바일 오토-클로즈 (메뉴 선택 시 스르륵 자동 닫힘)
     function setupMobileAutoClose() {
         if (doc.body.clientWidth > 768) return;
         const menuLabels = doc.querySelectorAll('[data-testid="stRadio"] label');
@@ -265,7 +251,7 @@ components.html("""
 </script>
 """, height=0)
 
-# --- [2. 코어 보조 함수 (기능 완전 복원)] ---
+# --- [2. 코어 보조 함수] ---
 def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
@@ -373,11 +359,9 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
             return f"❌ API 키 인증 실패 (HTTP {res.status_code})\n\n[디버그]\n{res.text}"
         
         available_names = [m['name'].split('/')[-1] for m in res.json().get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
-        
         targets = ['gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-flash'] if selected_model == "자동 (권장)" else [selected_model]
         targets = [t for t in targets if t in available_names]
-        if not targets: 
-            targets = [available_names[0]] if available_names else ['gemini-1.5-flash']
+        if not targets: targets = [available_names[0]] if available_names else ['gemini-1.5-flash']
         
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -394,7 +378,7 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                     if 'content' in candidate:
                         return candidate['content']['parts'][0]['text']
                     else:
-                        return f"❌ AI가 보안 정책 등의 이유로 답변을 생성하지 못했습니다. (사유: {candidate.get('finishReason', '알 수 없음')})"
+                        return f"❌ 답변 생성 불가. (사유: {candidate.get('finishReason', '알 수 없음')})"
                 elif gen_res.status_code in [503, 429]: 
                     last_error = f"{target} (트래픽 지연)"
                     time.sleep(wait_time); wait_time += 2; continue
@@ -437,7 +421,7 @@ if not st.session_state.logged_in:
         <div class='glass-card' style='text-align:center; padding: 40px;'>
             <div style='margin-bottom: 24px;'>
                 <h1 style='border:none; margin:0; padding:0; font-size:2rem; font-weight:800; letter-spacing:-1px;'>META SELLER</h1>
-                <p style='color:#71717a; font-size:0.9rem; margin-top:8px;'>자율형 오토 소싱 에이전트 시스템 v4.0</p>
+                <p style='color:#71717a; font-size:0.9rem; margin-top:8px;'>자율형 오토 소싱 에이전트 시스템 v5.0</p>
             </div>
         """, unsafe_allow_html=True)
         with st.form("login_form"):
@@ -454,7 +438,7 @@ if not st.session_state.logged_in:
 
 # --- [4. 사이드바 구성 및 API 영구 저장 시스템] ---
 with st.sidebar:
-    st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v4.0</span></p>", unsafe_allow_html=True)
+    st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v5.0</span></p>", unsafe_allow_html=True)
     st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
     
     mode_selection = st.radio("모드 선택", ["🚗 운전 모드 (음성 소싱)", "💻 작업 모드 (PC 분석)"], index=0 if "운전" in st.session_state.mode else 1)
@@ -607,7 +591,7 @@ elif "작업 모드" in st.session_state.mode:
         
         ws = get_member_worksheet()
         if ws is None:
-            st.error("🚨 구글 시트 연결에 실패했습니다. (secrets.toml 설정 확인)")
+            st.error("🚨 구글 시트 연결에 실패했습니다. (Secrets 설정 혹은 credentials.json 확인)")
         else:
             data = ws.get_all_records()
             df = pd.DataFrame(data)
@@ -661,62 +645,55 @@ elif "작업 모드" in st.session_state.mode:
             """, unsafe_allow_html=True)
             
         with col2:
-            st.markdown("<div class='glass-card' style='padding-bottom:12px;'><h3>🇨🇳 2. 황금 키워드 번역기</h3><p>한국어 상품명을 입력하면 전략 키워드로 변환합니다.</p></div>", unsafe_allow_html=True)
+            st.markdown("<div class='glass-card' style='padding-bottom:12px;'><h3>🇨🇳 2. 황금 키워드 번역기 (자동 저장)</h3><p>한국어 상품명을 입력하면 전략 키워드로 변환 후 DB에 자동 저장됩니다.</p></div>", unsafe_allow_html=True)
             with st.form("form_kw", clear_on_submit=False):
                 keyword_input_val = st.text_input("한국어 상품명 입력:", placeholder="예: 여름 원피스", label_visibility="collapsed")
-                btn_translate = st.form_submit_button("✨ 황금 키워드 연성", use_container_width=True)
+                btn_translate = st.form_submit_button("✨ 황금 키워드 연성 및 DB 자동 저장", use_container_width=True)
 
         if btn_translate:
             if not st.session_state.api_key_input: st.error("사이드바에 API 키를 저장해 주세요.")
             elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
             else:
-                with st.spinner("맞춤형 황금 키워드를 연성 중..."):
+                with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
                     prompt = f"당신은 타오바오 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 소싱용으로 번역하세요.\n"
                     prompt += "3가지 소싱 전략 검색어를 만드세요: 1.디자인/감성 2.실용성/기능 3.공장직영/가성비\n"
                     prompt += "형식:\n[TRANSLATION]기본키워드\n[STRATEGY_1]전략1\n[STRATEGY_2]전략2\n[STRATEGY_3]전략3"
                     
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
-                    st.session_state.ai_kw_res = res
-                    st.session_state.ai_kw_input = keyword_input_val
-
-        if 'ai_kw_res' in st.session_state:
-            res = st.session_state.ai_kw_res
-            keyword_input_val = st.session_state.ai_kw_input
-            
-            if res.startswith("❌") or res.startswith("⚠️"): 
-                st.error(res)
-            else:
-                trans, s1, s2, s3 = "", "", "", ""
-                for line in res.replace('**', '').split('\n'):
-                    line = line.strip()
-                    if line.startswith('[TRANSLATION]'): trans = line.replace('[TRANSLATION]', '').strip()
-                    elif line.startswith('[STRATEGY_1]'): s1 = line.replace('[STRATEGY_1]', '').strip()
-                    elif line.startswith('[STRATEGY_2]'): s2 = line.replace('[STRATEGY_2]', '').strip()
-                    elif line.startswith('[STRATEGY_3]'): s3 = line.replace('[STRATEGY_3]', '').strip()
-
-                st.success(f"✅ 연성 완료! (중국어 기본 번역: **{trans}**)")
-                strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
-                db_save_text = f"[기본 번역] {trans} | "
-                
-                kw_cols = st.columns(3)
-                for i, (name, search_query) in enumerate(strategies):
-                    if not search_query: continue
-                    link = f"https://s.taobao.com/search?q={quote(search_query)}"
-                    db_save_text += f"{name.split(' ')[1]}: {search_query} ({link}) | "
                     
-                    with kw_cols[i]:
-                        st.markdown(f"""
-                        <div class='glass-card' style='text-align:center;'>
-                            <span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span>
-                            <span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span>
-                            <a href="{link}" target="_blank" style="text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;">
-                                🔍 타오바오 검색
-                            </a>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    if res.startswith("❌") or res.startswith("⚠️"): 
+                        st.error(res)
+                    else:
+                        trans, s1, s2, s3 = "", "", "", ""
+                        for line in res.replace('**', '').split('\n'):
+                            line = line.strip()
+                            if line.startswith('[TRANSLATION]'): trans = line.replace('[TRANSLATION]', '').strip()
+                            elif line.startswith('[STRATEGY_1]'): s1 = line.replace('[STRATEGY_1]', '').strip()
+                            elif line.startswith('[STRATEGY_2]'): s2 = line.replace('[STRATEGY_2]', '').strip()
+                            elif line.startswith('[STRATEGY_3]'): s3 = line.replace('[STRATEGY_3]', '').strip()
 
-                if st.button("💾 이 키워드 데이터를 소싱 DB에 즉시 저장", use_container_width=True, key="save_kw_db"):
-                    with st.spinner("구글 시트로 전송 중..."):
+                        st.success(f"✅ 연성 완료! (중국어 기본 번역: **{trans}**)")
+                        strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
+                        db_save_text = f"[기본 번역] {trans} | "
+                        
+                        kw_cols = st.columns(3)
+                        for i, (name, search_query) in enumerate(strategies):
+                            if not search_query: continue
+                            link = f"https://s.taobao.com/search?q={quote(search_query)}"
+                            db_save_text += f"{name.split(' ')[1]}: {search_query} ({link}) | "
+                            
+                            with kw_cols[i]:
+                                st.markdown(f"""
+                                <div class='glass-card' style='text-align:center;'>
+                                    <span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span>
+                                    <span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span>
+                                    <a href="{link}" target="_blank" style="text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;">
+                                        🔍 타오바오 검색
+                                    </a>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                        # 🚨 AI 연산 직후 구글 시트 자동 저장 로직 실행
                         is_saved, err_msg = save_to_google_sheet(
                             f"키워드: {keyword_input_val}", 
                             "키워드분석", 
@@ -725,9 +702,9 @@ elif "작업 모드" in st.session_state.mode:
                         )
                         if is_saved: 
                             st.cache_data.clear()
-                            st.success("✅ 소싱 DB에 황금 키워드가 성공적으로 저장되었습니다!")
+                            st.info("💾 소싱 DB에 황금 키워드가 성공적으로 자동 저장되었습니다!")
                         else:
-                            st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
+                            st.error(f"⚠️ 구글 시트 자동 저장 실패: {err_msg}")
 
     elif menu == "🛑 지재권 리스크 스캐너":
         st.markdown("<h1>지재권 리스크 스캐너</h1>", unsafe_allow_html=True)
@@ -761,62 +738,55 @@ elif "작업 모드" in st.session_state.mode:
                 else: st.warning("검사할 단어를 입력하세요.")
 
         with col_b:
-            st.markdown("<div class='glass-card'><h3>🛡️ AI 법무팀 정밀 진단</h3><p>지재권, 인증(KC), 수입금지 여부를 심층 진단합니다.</p></div>", unsafe_allow_html=True)
+            st.markdown("<div class='glass-card'><h3>🛡️ AI 법무팀 정밀 진단 (자동 저장)</h3><p>지재권, 인증(KC), 수입금지 여부를 심층 진단 후 DB에 저장합니다.</p></div>", unsafe_allow_html=True)
             with st.form("form_ai_scan", clear_on_submit=False):
                 keyword_input_ai = st.text_area("상품 텍스트 또는 상세 설명 입력:", placeholder="예: 220v 중국산 상업용 제빙기", height=70, label_visibility="collapsed")
-                btn_ai = st.form_submit_button("🛡️ AI 심층 진단 실행", use_container_width=True)
+                btn_ai = st.form_submit_button("🛡️ AI 심층 진단 및 DB 자동 저장", use_container_width=True)
             
             if btn_ai:
                 if not st.session_state.api_key_input: st.warning("API 키를 저장하세요.")
                 elif not keyword_input_ai: st.warning("상품 정보를 입력하세요.")
                 else:
-                    with st.spinner("AI 관세사 분석 중..."):
+                    with st.spinner("AI 관세사 분석 및 자동 저장 중..."):
                         prompt = "이커머스 전문 관세사/변호사로서 통관 리스크 및 법적 리스크를 진단하세요.\n"
                         prompt += "결과는 반드시 JSON 형식으로만 출력하세요.\n"
                         prompt += '{\n  "Level": "안전", \n  "IP_Risk": "결과(1문장)",\n  "Cert_Risk": "결과(1문장)",\n  "Ban_Risk": "결과(1문장)",\n  "Final_Action": "최종 판결(1문장)"\n}\n'
                         prompt += f"[데이터]: {keyword_input_ai}"
                         
                         res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
-                        st.session_state.ai_ip_res = res
-                        st.session_state.ai_ip_item = keyword_input_ai
-
-            if 'ai_ip_res' in st.session_state:
-                res = st.session_state.ai_ip_res
-                item_val = st.session_state.ai_ip_item
-                
-                if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
-                else:
-                    try:
-                        match = re.search(r'\{.*\}', res, re.DOTALL)
-                        if match:
-                            data = json.loads(match.group(0))
-                            level = data.get("Level", "위험")
-                            border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
-                            
-                            st.markdown(f"""
-                            <div class='glass-card' style='border-left: 4px solid {border_color};'>
-                                <h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3>
-                                <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div>
-                                <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div>
-                                <div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div>
-                                <div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'>
-                                    <span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            if st.button("💾 진단 결과를 소싱 DB에 즉시 저장", use_container_width=True, key="save_ip_db"):
-                                with st.spinner("전송 중..."):
+                        
+                        if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
+                        else:
+                            try:
+                                match = re.search(r'\{.*\}', res, re.DOTALL)
+                                if match:
+                                    data = json.loads(match.group(0))
+                                    level = data.get("Level", "위험")
+                                    border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
+                                    
+                                    st.markdown(f"""
+                                    <div class='glass-card' style='border-left: 4px solid {border_color};'>
+                                        <h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3>
+                                        <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div>
+                                        <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div>
+                                        <div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div>
+                                        <div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'>
+                                            <span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    # 🚨 AI 연산 직후 구글 시트 자동 저장 로직 실행
                                     is_saved, err_msg = save_to_google_sheet(
-                                        item_val, f"법무진단: {level}", data.get('Final_Action', ''), 
+                                        keyword_input_ai, f"법무진단: {level}", data.get('Final_Action', ''), 
                                         f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}"
                                     )
                                     if is_saved: 
                                         st.cache_data.clear()
-                                        st.success("✅ DB 저장 완료!")
-                                    else: st.error(f"⚠️ 실패: {err_msg}")
-                        else: st.error("파싱 실패.")
-                    except Exception as e: st.error(f"오류: {e}")
+                                        st.info("💾 진단 결과가 소싱 DB에 안전하게 자동 저장되었습니다!")
+                                    else: st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
+                                else: st.error("파싱 실패.")
+                            except Exception as e: st.error(f"오류: {e}")
 
     elif menu == "🏭 공장 판별기 (도매처 검증)":
         st.markdown("<h1>타오바오 공장 판별기</h1>", unsafe_allow_html=True)
@@ -922,13 +892,13 @@ elif "작업 모드" in st.session_state.mode:
             with c_btn1:
                 st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"SellerPick_{item_name[:5]}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with c_btn2:
-                if st.button("💾 DB 즉시 저장", use_container_width=True, key="save_margin_db"):
-                    with st.spinner("전송 중..."):
+                if st.button("✅ 마진 분석 확정 및 DB 자동 저장", use_container_width=True, key="save_margin_db"):
+                    with st.spinner("구글 시트로 데이터 전송 중..."):
                         is_saved, err_msg = save_to_google_sheet(item_name, "마진분석", f"마진율 {margin_rate:.1f}% ({int(net_profit):,}원)", f"원가 {int(total_cost):,}원")
                         if is_saved: 
                             st.cache_data.clear()
-                            st.success("✅ 저장 완료!")
-                        else: st.error(f"⚠️ 실패: {err_msg}")
+                            st.success("✅ 확정된 마진율 데이터가 구글 시트에 저장되었습니다!")
+                        else: st.error(f"⚠️ 저장 실패: {err_msg}")
 
     elif menu == "🎯 광고 해부학 (쿠팡 최적화)":
         st.markdown("<h1>광고 해부학 (쿠팡 최적화)</h1>", unsafe_allow_html=True)
