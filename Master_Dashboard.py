@@ -657,9 +657,10 @@ elif "작업 모드" in st.session_state.mode:
             elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
             else:
                 with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
-                    # 🚨 [신규 필터 적용] AI에게 무조건 '중국어 간체자'로만 출력하라고 절대 명령
-                    prompt = f"당신은 중국 타오바오(Taobao) 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 반드시 '중국어 간체자(Simplified Chinese)'로만 번역하세요.\n"
-                    prompt += "3가지 소싱 전략에 맞춰 타오바오 검색창에 즉시 입력할 수 있는 '중국어 간체자 키워드'만 생성하세요. (영어, 한국어, 병음, 괄호, 부연 설명 절대 금지)\n"
+                    # 🚨 [신규 필터 적용] AI에게 무조건 '중국어 한자(간체자)'로만 출력하라고 절대 명령 추가
+                    prompt = f"당신은 중국 타오바오(Taobao) 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 검색용으로 번역하세요.\n"
+                    prompt += "3가지 소싱 전략에 맞춰 '타오바오에 복사해서 즉시 검색할 수 있는 순수 중국어 간체자 키워드'만 생성하세요.\n"
+                    prompt += "★경고: 영어, 한국어, 병음(Pinyin), 괄호, 부연 설명은 절대 출력하지 마세요! 오직 중국어 한자만 출력하세요. (단, ins, usb 같은 상품에 필수적인 영문 부품명은 허용)\n"
                     prompt += "형식:\n[TRANSLATION]기본중국어키워드\n[STRATEGY_1]전략1중국어키워드\n[STRATEGY_2]전략2중국어키워드\n[STRATEGY_3]전략3중국어키워드"
                     
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
@@ -674,11 +675,12 @@ elif "작업 모드" in st.session_state.mode:
                             elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
                             elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
 
-                        # 정규식으로 한글 등 불순물 최종 완벽 제거 (ins, usb 같은 영문은 타오바오 검색에 필수이므로 남김)
-                        pure_trans = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', trans).strip()
-                        pure_trans = ' '.join(pure_trans.split())
-                        if not pure_trans: pure_trans = trans
+                        # 🚨 [신규 필터 2차 방어] 파이썬에서도 한글 및 불필요한 특수문자 강제 삭제
+                        def clean_cn_keyword(text):
+                            cleaned = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', text).strip()
+                            return ' '.join(cleaned.split()) if cleaned else text
 
+                        pure_trans = clean_cn_keyword(trans)
                         st.success(f"✅ 연성 완료! (중국어 기본 번역: **{pure_trans}**)")
                         strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
                         
@@ -687,10 +689,7 @@ elif "작업 모드" in st.session_state.mode:
                         for i, (name, search_query) in enumerate(strategies):
                             if not search_query: continue
                             
-                            pure_keyword = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', search_query).strip()
-                            pure_keyword = ' '.join(pure_keyword.split())
-                            if not pure_keyword: pure_keyword = search_query
-                            
+                            pure_keyword = clean_cn_keyword(search_query)
                             link = f"https://s.taobao.com/search?q={quote(pure_keyword)}"
                             
                             with kw_cols[i]:
@@ -732,7 +731,16 @@ elif "작업 모드" in st.session_state.mode:
                             except:
                                 try: df = pd.read_csv(file_path, encoding='cp949', on_bad_lines='skip')
                                 except: df = pd.read_csv(file_path, encoding='euc-kr', on_bad_lines='skip')
-                        found = [val for col in df.columns for val in df[col].astype(str) if len(val.strip()) >= 2 and keyword_input_local.lower().replace(" ","") in val.lower().replace(" ","")]
+                        
+                        # 🚨 [신규 필터 적용] float(숫자, 빈칸) 에러 방어 로직 적용
+                        found = []
+                        for col in df.columns:
+                            for val in df[col]:
+                                str_val = str(val).strip()
+                                if str_val and str_val.lower() != 'nan' and len(str_val) >= 2:
+                                    if keyword_input_local.lower().replace(" ","") in str_val.lower().replace(" ",""):
+                                        found.append(str_val)
+
                         if found: st.error(f"🚨 [적발] DB 금칙어 발견: {', '.join(list(set(found)))}")
                         else: st.success(f"✅ '{keyword_input_local}' (은)는 안전합니다.")
                     except Exception as e: st.error(f"파일 오류: {e}")
@@ -943,7 +951,7 @@ elif "작업 모드" in st.session_state.mode:
             if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
             elif not v_desc and not c_data: st.warning("분석할 데이터를 입력해주세요.")
             else:
-                with st.spinner("경쟁사 전략을 역추적 중입니다..."): 
+                with st.spinner("경쟁사 전략을 역추적 중..."): 
                     st.success(generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model))
 
     elif menu == "📥 영상 분석 추출":
