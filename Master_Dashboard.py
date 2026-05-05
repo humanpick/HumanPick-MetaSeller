@@ -657,8 +657,9 @@ elif "작업 모드" in st.session_state.mode:
             elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
             else:
                 with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
-                    prompt = f"당신은 타오바오 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 검색용으로 번역하세요.\n"
-                    prompt += "3가지 소싱 전략에 맞춰 '타오바오에 복사해서 즉시 검색할 수 있는 순수 중국어 키워드'만 생성하세요. (한국어 번역이나 부연 설명 절대 금지)\n"
+                    # 🚨 [신규 필터 적용] AI에게 무조건 '중국어 간체자'로만 출력하라고 절대 명령
+                    prompt = f"당신은 중국 타오바오(Taobao) 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 반드시 '중국어 간체자(Simplified Chinese)'로만 번역하세요.\n"
+                    prompt += "3가지 소싱 전략에 맞춰 타오바오 검색창에 즉시 입력할 수 있는 '중국어 간체자 키워드'만 생성하세요. (영어, 한국어, 병음, 괄호, 부연 설명 절대 금지)\n"
                     prompt += "형식:\n[TRANSLATION]기본중국어키워드\n[STRATEGY_1]전략1중국어키워드\n[STRATEGY_2]전략2중국어키워드\n[STRATEGY_3]전략3중국어키워드"
                     
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
@@ -673,6 +674,7 @@ elif "작업 모드" in st.session_state.mode:
                             elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
                             elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
 
+                        # 정규식으로 한글 등 불순물 최종 완벽 제거 (ins, usb 같은 영문은 타오바오 검색에 필수이므로 남김)
                         pure_trans = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', trans).strip()
                         pure_trans = ' '.join(pure_trans.split())
                         if not pure_trans: pure_trans = trans
