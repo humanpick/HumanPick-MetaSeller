@@ -227,7 +227,6 @@ def parse_korean_currency(val_str):
         return int(clean_str) if clean_str else 0
     except ValueError: return 0
 
-# 🚨 [수정] target_sheet 파라미터 추가하여 시트를 분리할 수 있도록 개선
 def save_to_google_sheet(item_name, grade, reason, detail_data, target_sheet=None):
     try:
         if "gcp_service_account" in st.secrets:
@@ -242,7 +241,6 @@ def save_to_google_sheet(item_name, grade, reason, detail_data, target_sheet=Non
         sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
         spreadsheet = client.open_by_key(sheet_id)
         
-        # 특정 시트명(target_sheet)이 지정되었으면 그 시트를 사용, 아니면 현재 월(Month) 시트 사용
         sheet_title = target_sheet if target_sheet else datetime.now().strftime("%Y%m")
         
         existing_sheets = [ws.title for ws in spreadsheet.worksheets()]
@@ -772,9 +770,11 @@ elif "작업 모드" in st.session_state.mode:
                                     border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
                                     st.markdown(f"<div class='glass-card' style='border-left: 4px solid {border_color};'><h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div><div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'><span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span></div></div>", unsafe_allow_html=True)
                                     
-                                    # 🚨 [신규] 법무 진단 결과는 월별 시트가 아닌 '지재권리스트' 전용 시트로 분리 저장
+                                    # 🚨 [신규] 엔터(줄바꿈)가 들어가서 엑셀 칸이 늘어나는 현상 방지
+                                    clean_keyword_input_ai = keyword_input_ai.replace('\n', ' ').strip()
+                                    
                                     is_saved, err_msg = save_to_google_sheet(
-                                        keyword_input_ai, 
+                                        clean_keyword_input_ai, 
                                         f"법무진단: {level}", 
                                         data.get('Final_Action', ''), 
                                         f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}",
