@@ -9,6 +9,7 @@ import time
 import math
 import json
 import re
+import base64
 from datetime import datetime
 import webbrowser
 from urllib.parse import quote 
@@ -41,7 +42,7 @@ except ImportError:
     st.stop()
 
 # --- [1. 하이엔드 SaaS 디자인 시스템 적용 (Humanpick v1.0)] ---
-st.set_page_config(page_title="MetaSeller v6.0", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="MetaSeller v6.5", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -176,6 +177,21 @@ def cloud_new_tab(url, platform_name):
         </a>
     </div>
     """, unsafe_allow_html=True)
+
+# 🚨 [신규] ImgBB 서버로 이미지를 업로드하고 URL을 반환하는 함수
+def upload_to_imgbb(image_bytes, api_key):
+    try:
+        url = "https://api.imgbb.com/1/upload"
+        payload = {
+            "key": api_key,
+            "image": base64.b64encode(image_bytes).decode("utf-8")
+        }
+        res = requests.post(url, data=payload)
+        if res.status_code == 200:
+            return res.json()["data"]["url"]
+        return ""
+    except:
+        return ""
 
 def get_member_worksheet():
     try:
@@ -334,7 +350,8 @@ def fetch_sourcing_db():
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
 
-def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
+# 🚨 [신규] 이미지 데이터를 함께 인식할 수 있도록 Vision AI 파라미터 추가
+def generate_content_auto(prompt, api_key, selected_model="자동 (권장)", image_bytes=None, mime_type="image/jpeg"):
     if not api_key: return "❌ API 키가 없습니다."
     try:
         models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
@@ -354,7 +371,19 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         if not targets: return "❌ 사용 가능한 AI 모델이 없습니다."
         
         headers = {'Content-Type': 'application/json'}
-        data = {"contents": [{"parts": [{"text": prompt}]}]}
+        
+        # 🚨 이미지 데이터가 존재할 경우 Payload에 Base64 형태로 함께 포장
+        parts = [{"text": prompt}]
+        if image_bytes:
+            img_b64 = base64.b64encode(image_bytes).decode("utf-8")
+            parts.append({
+                "inline_data": {
+                    "mime_type": mime_type,
+                    "data": img_b64
+                }
+            })
+            
+        data = {"contents": [{"parts": parts}]}
         last_error = ""
         
         max_overall_retries = 5 
@@ -417,7 +446,7 @@ if not st.session_state.logged_in:
         <div class='glass-card' style='text-align:center; padding: 30px;'>
             <div style='margin-bottom: 24px;'>
                 <h1 style='border:none; margin:0; padding:0; font-size:2rem; font-weight:800; letter-spacing:-1px;'>META SELLER</h1>
-                <p style='color:#71717a; font-size:0.9rem; margin-top:8px;'>자율형 오토 소싱 에이전트 시스템 v6.0</p>
+                <p style='color:#71717a; font-size:0.9rem; margin-top:8px;'>자율형 오토 소싱 에이전트 시스템 v6.5</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -473,7 +502,7 @@ if not st.session_state.logged_in:
 
 # --- [4. 사이드바 구성 및 API 영구 저장 시스템] ---
 with st.sidebar:
-    st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v6.0</span></p>", unsafe_allow_html=True)
+    st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v6.5 (Vision)</span></p>", unsafe_allow_html=True)
     
     level_color = "#F59E0B" if "VIP" in st.session_state.user_level else ("#10B981" if "유료" in st.session_state.user_level else "#a1a1aa")
     st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role} | <span style='color:{level_color}; font-weight:600;'>{st.session_state.user_level}</span>)</span></div>", unsafe_allow_html=True)
@@ -494,21 +523,32 @@ with st.sidebar:
 
     st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
     
+    # API 키 영구 저장 로직
     key_file_path = os.path.join(os.getcwd(), ".api_key")
+    imgbb_key_path = os.path.join(os.getcwd(), ".imgbb_key")
+    
     if "api_key_input" not in st.session_state:
         if os.path.exists(key_file_path):
             with open(key_file_path, "r", encoding="utf-8") as f: st.session_state.api_key_input = f.read().strip()
         else: st.session_state.api_key_input = ""
+        
+    if "imgbb_key_input" not in st.session_state:
+        if os.path.exists(imgbb_key_path):
+            with open(imgbb_key_path, "r", encoding="utf-8") as f: st.session_state.imgbb_key_input = f.read().strip()
+        else: st.session_state.imgbb_key_input = ""
             
     st.markdown("<p style='font-size:0.75rem; color:#52525b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; padding-left: 12px;'>환경 설정</p>", unsafe_allow_html=True)
-    api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="API 키를 입력하세요")
+    api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="Gemini API 키 (필수)")
+    imgbb_key_val = st.text_input("ImgBB API Key", type="password", value=st.session_state.imgbb_key_input, label_visibility="collapsed", placeholder="ImgBB API 키 (선택, 사진저장용)")
     selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-2.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
     
     c1, c2 = st.columns([1, 1.35]) 
     with c1:
-        if st.button("💾 키 저장"): 
+        if st.button("💾 키 일괄 저장"): 
             with open(key_file_path, "w", encoding="utf-8") as f: f.write(api_key_val)
+            with open(imgbb_key_path, "w", encoding="utf-8") as f: f.write(imgbb_key_val)
             st.session_state.api_key_input = api_key_val
+            st.session_state.imgbb_key_input = imgbb_key_val
             st.success("저장 완료")
     with c2:
         if st.button("🚪 안전 로그아웃"): 
@@ -523,7 +563,7 @@ with st.sidebar:
 # ==========================================
 if "운전 모드" in st.session_state.mode:
     st.markdown("<h1>🚗 운전 모드 (음성 소싱 에이전트)</h1>", unsafe_allow_html=True)
-    st.info("💡 모바일 키보드의 **[마이크 🎤] 버튼**을 눌러 상품을 말해주세요. AI가 판독하여 시트로 전송합니다.")
+    st.info("💡 **[마이크 🎤] 버튼**으로 상품을 말하거나 **사진을 업로드**하세요. AI가 시각적으로 판독 후 시트에 사진 링크와 함께 저장합니다.")
     
     with st.form("drive_mode_form"):
         voice_input = st.text_area("🎙️ 상품 정보 입력창 (음성 입력 후 터치)", height=150, placeholder="예: 상업용 초음파 식기세척기 찾아줘. 중국가 1000위안 정도.")
@@ -532,19 +572,28 @@ if "운전 모드" in st.session_state.mode:
 
     if submit_voice:
         if not st.session_state.api_key_input: 
-            st.error("좌측 사이드바에 API Key를 먼저 입력하고 저장해주세요.")
+            st.error("좌측 사이드바에 Gemini API Key를 먼저 입력하고 저장해주세요.")
         elif not voice_input and not uploaded_img: 
             st.warning("분석할 텍스트나 사진을 입력해주세요.")
         else:
-            with st.spinner("AI가 데이터를 추정하고 법무 스캔을 진행 중입니다..."):
+            with st.spinner("AI가 데이터를 시각적으로 추정하고 법무 스캔을 진행 중입니다..."):
+                
+                # 1. 파일 바이너리 추출 및 Mime타입 식별
+                img_bytes = uploaded_img.getvalue() if uploaded_img else None
+                img_mime = uploaded_img.type if uploaded_img else "image/jpeg"
+                
                 prompt = "당신은 B2B 구매대행 전문가입니다. 운전 중인 대표님을 위해 즉시 판단하세요.\n"
+                if img_bytes:
+                    prompt += "★[사진 첨부됨]: 첨부된 사진을 꼼꼼히 보고 어떤 상품인지, 재질은 무엇인지 식별하여 텍스트 데이터와 결합하세요.\n"
                 prompt += "1. 단가와 무게를 추정하고 전안법, 전파법 등 통관 여부를 검토.\n"
                 prompt += "2. 아래 JSON 양식으로만 답변. 마진 금액은 반드시 콤마(,)를 찍어서 표기.\n\n"
-                prompt += f"입력 내용: {voice_input}\n\n"
+                prompt += f"입력 내용: {voice_input if voice_input else '(사진만 첨부됨)'}\n\n"
                 prompt += "양식:\n"
                 prompt += '{\n  "Item": "추정된 정확한 상품명",\n  "Grade": "1등급(즉시소싱)",\n  "Profit": "예상 순수익 150,000원",\n  "Reason": "이유 2문장 이내 요약"\n}'
                 
-                res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
+                # 2. Vision AI 엔진으로 텍스트+사진 동시 전송
+                res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model, image_bytes=img_bytes, mime_type=img_mime)
+                
                 if res.startswith("❌") or res.startswith("⚠️"):
                     st.error(res)
                 else:
@@ -563,16 +612,30 @@ if "운전 모드" in st.session_state.mode:
                             </div>
                             """, unsafe_allow_html=True)
                             
+                            # 3. 사진이 있다면 ImgBB에 업로드하여 URL 발급받기
+                            image_url = ""
+                            if img_bytes:
+                                if st.session_state.imgbb_key_input:
+                                    with st.spinner("사진을 클라우드에 영구 저장하는 중..."):
+                                        image_url = upload_to_imgbb(img_bytes, st.session_state.imgbb_key_input)
+                                else:
+                                    st.warning("⚠️ ImgBB API Key가 없어 구글 시트에 사진 링크는 저장되지 않습니다. (텍스트는 정상 저장됨)")
+                            
+                            # 4. 시트에 저장될 상세 텍스트 조립 (URL이 있으면 하이퍼링크 함수 추가)
+                            final_detail_data = voice_input if voice_input else "[사진 단독 분석]"
+                            if image_url:
+                                final_detail_data += f'\n\n=HYPERLINK("{image_url}", "📷 현장 사진 보기")'
+                            
                             is_saved, err_msg = save_to_google_sheet(
                                 data.get('Item', ''), 
                                 data.get('Grade', ''), 
                                 data.get('Reason', ''), 
-                                voice_input,
+                                final_detail_data,
                                 target_sheet="모바일 소싱DB"
                             )
                             if is_saved: 
                                 st.cache_data.clear() 
-                                st.success("✅ 공유된 [구글 시트]의 '모바일 소싱DB' 시트에 내용이 추가되었습니다!")
+                                st.success("✅ 공유된 [구글 시트]의 '모바일 소싱DB' 시트에 내용과 사진이 성공적으로 추가되었습니다!")
                             else: 
                                 st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
                         else: st.error(f"데이터 파싱 실패. 원본 응답:\n{res}")
