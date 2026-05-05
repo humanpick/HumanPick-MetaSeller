@@ -429,7 +429,7 @@ if not st.session_state.logged_in:
             upw = st.text_input("비밀번호", type="password", placeholder="••••")
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
             if st.form_submit_button("시스템 로그인 →"):
-                if uid == "admin" and upw == "1234":
+                if uid == "minjun" and upw == "gryrary0406**":
                     st.session_state.logged_in = True
                     rerun_app()
                 else: st.error("인증 자격 증명이 올바르지 않습니다.")
