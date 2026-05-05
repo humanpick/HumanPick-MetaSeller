@@ -10,6 +10,7 @@ import math
 import json
 import re
 from datetime import datetime
+import webbrowser
 from urllib.parse import quote 
 from io import BytesIO
 
@@ -140,11 +141,8 @@ def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
 
-# 🚨 [신규] 클라우드 환경용 웹 브라우저 강제 호출 및 팝업 차단 방어 함수
 def cloud_new_tab(url, platform_name):
-    # 1단계: 자바스크립트로 강제 팝업 시도
     st.components.v1.html(f"<script>window.parent.open('{url}', '_blank');</script>", height=0)
-    # 2단계: 팝업 차단 대비 확실한 수동 클릭 버튼 제공
     st.markdown(f"""
     <div style='background: rgba(139, 92, 246, 0.1); border: 1px solid #8B5CF6; border-radius: 8px; padding: 16px; text-align: center; margin-top: 12px;'>
         <p style='color: #fafafa; font-size: 0.95rem; margin-bottom: 8px;'>✨ <strong>{platform_name}</strong> 연결 준비 완료!</p>
@@ -972,7 +970,7 @@ elif "작업 모드" in st.session_state.mode:
             if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
             elif not v_desc and not c_data: st.warning("분석할 데이터를 입력해주세요.")
             else:
-                with st.spinner("경쟁사 전략을 역추적 중입니다..."): 
+                with st.spinner("경쟁사 전략을 역추적 중..."): 
                     st.success(generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model))
 
     elif menu == "📥 영상 분석 추출":
@@ -982,7 +980,7 @@ elif "작업 모드" in st.session_state.mode:
             st.markdown("<div class='glass-card'><h3>🔍 1. 숏폼 리서치 퀵 링크</h3></div>", unsafe_allow_html=True)
             with st.form("form_media_search", clear_on_submit=False):
                 short_query = st.text_input("검색어 입력:", placeholder="예: 여름 원피스", label_visibility="collapsed")
-                auto_translate = st.checkbox("🇨🇳 도유인 검색 시 중국어 자동 번역", value=True)
+                auto_translate = st.checkbox("🇨🇳 도유인/틱톡 검색 시 중국어 자동 번역", value=True)
                 st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
                 cd, ct, cy = st.columns(3, gap="small"); cr, cn, ce = st.columns(3, gap="small")
                 with cd: btn_dy = st.form_submit_button("🇨🇳 도유인", use_container_width=True)
@@ -1001,7 +999,13 @@ elif "작업 모드" in st.session_state.mode:
                 cloud_new_tab(url, "도유인")
                 
             if btn_tt: 
-                url = f"https://www.tiktok.com/search?q={quote(short_query)}" if short_query else "https://www.tiktok.com/explore"
+                # 🚨 [신규] 틱톡도 중국어로 번역하여 검색하도록 로직 복사 적용
+                q = short_query
+                if short_query and auto_translate and st.session_state.api_key_input:
+                    with st.spinner("🇨🇳 틱톡 검색용 중국어 번역 중..."):
+                        cn_res = generate_content_auto(f"'{short_query}'를 중국어 간체자로 번역해. 단어 1개.", st.session_state.api_key_input, selected_model).strip()
+                        if not cn_res.startswith("❌"): q = cn_res
+                url = f"https://www.tiktok.com/search?q={quote(q)}" if short_query else "https://www.tiktok.com/explore"
                 cloud_new_tab(url, "틱톡")
                 
             if btn_yt: 
@@ -1018,7 +1022,6 @@ elif "작업 모드" in st.session_state.mode:
 
         with col_ext2:
             st.markdown("<div class='glass-card'><h3>📥 2. 워터마크 제거 전용 다운로더</h3></div>", unsafe_allow_html=True)
-            # 🚨 [신규] 클라우드 환경 호환을 위한 HTML <a> 태그 버튼 적용
             st.markdown("""
             <a href="https://dlpanda.com/ko" target="_blank" style="background: #18181b; color: #fafafa; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.7rem 0.4rem; font-weight: 500; font-size: 0.9rem; text-align: center; text-decoration: none; display: block; width: 100%; transition: all 0.2s ease; margin-bottom: 12px;">
                 🚀 🇨🇳 도유인 전용 다운로더 (dlpanda)
