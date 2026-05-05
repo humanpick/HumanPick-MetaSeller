@@ -180,6 +180,9 @@ def get_member_worksheet():
             worksheet = spreadsheet.worksheet("회원관리")
             headers = worksheet.row_values(1)
             if "등급" not in headers:
+                # 🚨 [해결] 기존 시트 열 갯수가 부족하면 열을 추가하여 에러 방지
+                if worksheet.col_count < len(headers) + 1:
+                    worksheet.add_cols(1)
                 worksheet.update_cell(1, len(headers) + 1, "등급")
             return worksheet, "성공"
         except gspread.exceptions.WorksheetNotFound:
@@ -386,7 +389,11 @@ if not st.session_state.logged_in:
                                     st.error("이미 존재하는 아이디입니다.")
                                 else:
                                     today = datetime.now().strftime("%Y-%m-%d")
-                                    ws.append_row([new_uid, new_upw, new_name, "승인대기", "2026-12-31", today, "무료회원"])
+                                    # 열 갯수에 맞게 빈칸 채우기
+                                    row_data = [new_uid, new_upw, new_name, "승인대기", "2026-12-31", today, "무료회원"]
+                                    if ws.col_count > len(row_data):
+                                        row_data.extend([""] * (ws.col_count - len(row_data)))
+                                    ws.append_row(row_data)
                                     st.success("✅ 가입 신청이 완료되었습니다! 관리자 승인 후 로그인 가능합니다.")
                             else:
                                 st.error(f"🚨 가입 에러 로그: \n\n{error_msg}")
@@ -591,6 +598,10 @@ elif "작업 모드" in st.session_state.mode:
                         row_data = [new_id, new_pw, new_name, status, "2026-12-31", today]
                         if "등급" in headers: row_data.append(new_level)
                         else: row_data.append(new_level)
+                        
+                        if ws.col_count > len(row_data):
+                            row_data.extend([""] * (ws.col_count - len(row_data)))
+                            
                         ws.append_row(row_data)
                         st.success(f"[{new_name}] 님의 권한이 성공적으로 발급되어 시트에 자동 저장되었습니다!")
                         time.sleep(1) 
@@ -800,7 +811,9 @@ elif "작업 모드" in st.session_state.mode:
         commission_cost = int(selling_price * (commission_rate / 100))
         net_margin = selling_price - (cost_price + fulfillment_fee + commission_cost)
         target_roas = 0 if net_margin <= 0 else round((selling_price / net_margin) * 100, 2)
-        margin_color = "#10B981" if net_margin > 0 else "#EF4444" 
+        
+        # 🚨 [수정] 조건문을 분리하여 f-string 오류 해결
+        margin_color = "#10B981" if net_margin > 0 else "#EF4444"
         
         st.markdown(f"""
         <div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'>
