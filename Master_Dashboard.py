@@ -256,6 +256,62 @@ def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
 
+def get_member_worksheet():
+    try:
+        if "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        else:
+            if not os.path.exists("credentials.json"): return None
+            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+
+        client = gspread.authorize(creds)
+        sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
+        spreadsheet = client.open_by_key(sheet_id)
+
+        try:
+            worksheet = spreadsheet.worksheet("회원관리")
+        except gspread.exceptions.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=6)
+            worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일"])
+        return worksheet
+    except Exception as e:
+        return None
+
+# 🚨 [신규] DB 연동 다중 로그인 검증 함수
+def authenticate_user(uid, upw):
+    if uid == "admin" and upw == "1234":
+        return True, "마스터", "관리자", ""
+
+    ws = get_member_worksheet()
+    if ws is None:
+        return False, None, None, "🚨 구글 시트(DB) 연결 실패. 서버 환경을 확인하세요."
+
+    records = ws.get_all_records()
+    df = pd.DataFrame(records)
+
+    if df.empty or '아이디' not in df.columns:
+        return False, None, None, "등록된 회원 정보가 없습니다."
+
+    # 데이터프레임에서 일치하는 회원 찾기
+    user_match = df[(df['아이디'].astype(str) == str(uid)) & (df['비밀번호'].astype(str) == str(upw))]
+
+    if user_match.empty:
+        return False, None, None, "아이디 또는 비밀번호가 일치하지 않습니다."
+
+    user_info = user_match.iloc[0]
+    status = user_info.get('상태', '')
+    user_name = user_info.get('이름', '회원')
+
+    if status == "승인대기":
+        return False, None, None, "⏳ 관리자 승인 대기 중입니다. 승인 후 이용 가능합니다."
+    elif status in ["기간만료", "영구정지"]:
+        return False, None, None, f"🚫 접속이 제한된 계정입니다. (상태: {status})"
+    elif status == "이용중":
+        return True, user_name, "일반회원", ""
+    else:
+        return False, None, None, "알 수 없는 계정 상태입니다."
+
 def parse_korean_currency(val_str):
     try:
         clean_str = str(val_str).replace(',', '').replace(' ', '')
@@ -328,28 +384,6 @@ def fetch_sourcing_db():
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
 
-def get_member_worksheet():
-    try:
-        if "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-        else:
-            if not os.path.exists("credentials.json"): return None
-            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-
-        client = gspread.authorize(creds)
-        sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
-        spreadsheet = client.open_by_key(sheet_id)
-
-        try:
-            worksheet = spreadsheet.worksheet("회원관리")
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=6)
-            worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일"])
-        return worksheet
-    except Exception as e:
-        return None
-
 def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
     if not api_key: return "❌ API 키가 없습니다."
     try:
@@ -409,37 +443,76 @@ def extract_copywriting_materials():
             except: pass
     return extracted_text, file_list, target_dir
 
-# --- [3. 시스템 마스터 로그인 로직] ---
+# --- [3. 시스템 마스터 로그인 및 회원가입 로직] ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'mode' not in st.session_state: st.session_state.mode = "💻 작업 모드 (PC 분석)"
+if 'user_name' not in st.session_state: st.session_state.user_name = ""
+if 'user_role' not in st.session_state: st.session_state.user_role = ""
 
 if not st.session_state.logged_in:
-    st.markdown("<div style='height: 15vh;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10vh;'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
         st.markdown("""
-        <div class='glass-card' style='text-align:center; padding: 40px;'>
+        <div class='glass-card' style='text-align:center; padding: 30px;'>
             <div style='margin-bottom: 24px;'>
                 <h1 style='border:none; margin:0; padding:0; font-size:2rem; font-weight:800; letter-spacing:-1px;'>META SELLER</h1>
                 <p style='color:#71717a; font-size:0.9rem; margin-top:8px;'>자율형 오토 소싱 에이전트 시스템 v5.0</p>
             </div>
         """, unsafe_allow_html=True)
-        with st.form("login_form"):
-            uid = st.text_input("마스터 ID", placeholder="admin 입력")
-            upw = st.text_input("비밀번호", type="password", placeholder="••••")
-            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            if st.form_submit_button("시스템 로그인 →"):
-                if uid == "minjun" and upw == "gryrary0406**":
-                    st.session_state.logged_in = True
-                    rerun_app()
-                else: st.error("인증 자격 증명이 올바르지 않습니다.")
+        
+        tab_login, tab_signup = st.tabs(["🔒 로그인", "📝 회원가입 신청"])
+        
+        with tab_login:
+            with st.form("login_form"):
+                uid = st.text_input("아이디 (이메일)", placeholder="아이디 입력")
+                upw = st.text_input("비밀번호", type="password", placeholder="••••")
+                st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+                if st.form_submit_button("시스템 로그인 →"):
+                    is_auth, u_name, u_role, err_msg = authenticate_user(uid, upw)
+                    if is_auth:
+                        st.session_state.logged_in = True
+                        st.session_state.user_name = u_name
+                        st.session_state.user_role = u_role
+                        st.success(f"환영합니다, {u_name}님!")
+                        time.sleep(0.5)
+                        rerun_app()
+                    else: 
+                        st.error(err_msg)
+                        
+        with tab_signup:
+            with st.form("signup_form"):
+                st.markdown("<p style='font-size:0.9rem; color:#a1a1aa; margin-bottom:12px;'>승인 대기 상태로 등록되며, 관리자 승인 후 로그인할 수 있습니다.</p>", unsafe_allow_html=True)
+                new_uid = st.text_input("신청 아이디 (이메일)*")
+                new_upw = st.text_input("비밀번호 설정*", type="password")
+                new_name = st.text_input("이름 / 회사명*")
+                
+                if st.form_submit_button("가입 신청하기"):
+                    if not new_uid or not new_upw or not new_name:
+                        st.warning("모든 항목을 입력해주세요.")
+                    else:
+                        with st.spinner("가입 처리 중..."):
+                            ws = get_member_worksheet()
+                            if ws:
+                                records = ws.get_all_records()
+                                if any(str(r.get('아이디', '')) == new_uid for r in records):
+                                    st.error("이미 존재하는 아이디입니다.")
+                                else:
+                                    today = datetime.now().strftime("%Y-%m-%d")
+                                    ws.append_row([new_uid, new_upw, new_name, "승인대기", "2026-12-31", today])
+                                    st.success("✅ 가입 신청이 완료되었습니다! 관리자 승인 후 로그인 가능합니다.")
+                            else:
+                                st.error("구글 시트(DB) 연결에 실패했습니다.")
+
         st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
 # --- [4. 사이드바 구성 및 API 영구 저장 시스템] ---
 with st.sidebar:
     st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v5.0</span></p>", unsafe_allow_html=True)
-    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+    
+    # [신규] 로그인 사용자 정보 표시
+    st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role})</span></div>", unsafe_allow_html=True)
     
     mode_selection = st.radio("모드 선택", ["🚗 운전 모드 (음성 소싱)", "💻 작업 모드 (PC 분석)"], index=0 if "운전" in st.session_state.mode else 1)
     if mode_selection != st.session_state.mode:
@@ -448,10 +521,11 @@ with st.sidebar:
 
     if "작업 모드" in st.session_state.mode:
         st.markdown("<div style='height: 16px;'></div><p style='font-size: 0.75rem; color: #52525b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding-left: 12px;'>상세 메뉴</p>", unsafe_allow_html=True)
-        menu = st.radio("hidden_label", [
+        
+        # 🚨 [신규] 관리자에게만 '회원 관리' 메뉴 표시
+        menu_options = [
             "🚀 시스템 홈 (대시보드)",
             "🗂️ 소싱 DB 관리",
-            "👥 회원 관리 (어드민)", 
             "🧪 키워드 분석 (트렌드 발굴)", 
             "🛑 지재권 리스크 스캐너", 
             "🏭 공장 판별기 (도매처 검증)", 
@@ -459,7 +533,12 @@ with st.sidebar:
             "🎯 광고 해부학 (쿠팡 최적화)",
             "✍️ 카피라이팅 기획소",
             "📥 영상 분석 추출"
-        ], index=0, label_visibility="collapsed")
+        ]
+        
+        if st.session_state.user_role == "관리자":
+            menu_options.insert(2, "👥 회원 관리 (어드민)")
+
+        menu = st.radio("hidden_label", menu_options, index=0, label_visibility="collapsed")
     else:
         menu = "운전모드"
 
@@ -488,6 +567,8 @@ with st.sidebar:
     with c2:
         if st.button("🚪 안전 로그아웃"): 
             st.session_state.logged_in = False
+            st.session_state.user_name = ""
+            st.session_state.user_role = ""
             rerun_app()
 
 # ==========================================
@@ -605,7 +686,7 @@ elif "작업 모드" in st.session_state.mode:
             st.markdown("</div>", unsafe_allow_html=True)
 
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #EC4899;'>신규 회원 권한 발급</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #EC4899;'>신규 회원 권한 발급 및 관리</h3>", unsafe_allow_html=True)
 
             with st.form(key='add_member_form', clear_on_submit=True):
                 col1, col2 = st.columns(2)
@@ -693,7 +774,6 @@ elif "작업 모드" in st.session_state.mode:
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                        # 🚨 AI 연산 직후 구글 시트 자동 저장 로직 실행
                         is_saved, err_msg = save_to_google_sheet(
                             f"키워드: {keyword_input_val}", 
                             "키워드분석", 
@@ -776,7 +856,6 @@ elif "작업 모드" in st.session_state.mode:
                                     </div>
                                     """, unsafe_allow_html=True)
                                     
-                                    # 🚨 AI 연산 직후 구글 시트 자동 저장 로직 실행
                                     is_saved, err_msg = save_to_google_sheet(
                                         keyword_input_ai, f"법무진단: {level}", data.get('Final_Action', ''), 
                                         f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}"
