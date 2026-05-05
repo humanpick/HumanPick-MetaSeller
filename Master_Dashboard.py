@@ -293,6 +293,7 @@ def fetch_sourcing_db():
             return df, "🟡 로컬 CSV 백업본 (오프라인 모드)"
         return pd.DataFrame(), f"🔴 연결 실패 ({e})"
 
+# 🚨 [신규] 트래픽 혼잡 시 자동 우회(Failover) 기능이 적용된 AI 엔진
 def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
     if not api_key: return "❌ API 키가 없습니다."
     try:
@@ -300,18 +301,30 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         res = requests.get(models_url)
         if res.status_code != 200: return f"❌ API 키 인증 실패 (HTTP {res.status_code})\n\n[디버그]\n{res.text}"
         
+        # 구글 계정에서 현재 사용 가능한 모든 최신 모델을 스캔합니다.
         available_names = [m['name'].split('/')[-1] for m in res.json().get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
-        targets = ['gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-flash'] if selected_model == "자동 (권장)" else [selected_model]
-        targets = [t for t in targets if t in available_names]
-        if not targets: targets = [available_names[0]] if available_names else ['gemini-1.5-flash']
+        
+        # '자동' 선택 시 트래픽 우회를 위한 모델 우선순위 큐 설정
+        if selected_model == "자동 (권장)":
+            priority = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']
+            targets = [m for m in priority if m in available_names]
+            # 우선순위에 없는 나머지 모델도 후순위 보험용으로 모두 추가
+            for m in available_names:
+                if m not in targets: targets.append(m)
+        else:
+            targets = [selected_model] if selected_model in available_names else [available_names[0]]
+        
+        if not targets: return "❌ 사용 가능한 AI 모델이 없습니다."
         
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": prompt}]}]}
         last_error = ""
         
-        for target in targets:
-            wait_time = 2
-            for attempt in range(2): 
+        # 최대 5번의 전체 사이클(모든 모델을 번갈아가며 찌르기) 시도
+        max_overall_retries = 5 
+        
+        for cycle in range(max_overall_retries):
+            for target in targets:
                 gen_url = f"https://generativelanguage.googleapis.com/v1beta/models/{target}:generateContent?key={api_key}"
                 gen_res = requests.post(gen_url, headers=headers, json=data)
                 
@@ -319,15 +332,21 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                     candidate = gen_res.json().get('candidates', [{}])[0]
                     if 'content' in candidate: return candidate['content']['parts'][0]['text']
                     else: return f"❌ 답변 생성 불가. (사유: {candidate.get('finishReason', '알 수 없음')})"
+                
                 elif gen_res.status_code in [503, 429]: 
-                    last_error = f"{target} (트래픽 지연)"
-                    time.sleep(wait_time); wait_time += 2; continue
+                    # 🚨 [핵심] 트래픽 지연 발생 시 지체하지 않고 즉시 다음 모델로 우회
+                    last_error = f"{target} (트래픽 지연 발생 -> 우회 중...)"
+                    continue 
                 else: 
                     try: err_msg = gen_res.json().get('error', {}).get('message', gen_res.text)
                     except: err_msg = gen_res.text
                     last_error = f"{target} (HTTP {gen_res.status_code}: {err_msg})"
-                    break 
-        return f"⚠️ 서버 응답 거부 또는 실패\n\n[구글 원본 에러 메시지]\n{last_error}"
+                    continue
+            
+            # 모든 모델이 다 막혔을 최악의 경우에만 3초 숨 고르기 후 재시작
+            time.sleep(3)
+            
+        return f"⚠️ 전체 AI 서버 트래픽 혼잡 (재시도 초과)\n\n[마지막 로그]\n{last_error}"
     except Exception as e: return f"❌ 통신 시스템 오류: {e}"
 
 @st.cache_data
@@ -448,8 +467,10 @@ with st.sidebar:
         else: st.session_state.api_key_input = ""
             
     st.markdown("<p style='font-size:0.75rem; color:#52525b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; padding-left: 12px;'>환경 설정</p>", unsafe_allow_html=True)
+    
+    # 🚨 [신규] 셀렉트박스 옵션에 신규 모델 명시적 추가
     api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="API 키를 입력하세요")
-    selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
+    selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-2.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
     
     c1, c2 = st.columns([1, 1.35]) 
     with c1:
@@ -659,8 +680,6 @@ elif "작업 모드" in st.session_state.mode:
                         strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
                         
                         kw_cols = st.columns(3)
-                        
-                        # 🚨 [신규] 각각의 전략을 3개의 분리된 줄(Row)로 개별 저장하는 로직
                         save_success_count = 0
                         for i, (name, search_query) in enumerate(strategies):
                             if not search_query: continue
@@ -669,7 +688,6 @@ elif "작업 모드" in st.session_state.mode:
                             with kw_cols[i]:
                                 st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
                                 
-                            # DB에 1줄씩 개별 전송
                             is_saved, err_msg = save_to_google_sheet(
                                 f"키워드: {keyword_input_val} ({name})", 
                                 "키워드분석", 
