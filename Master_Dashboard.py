@@ -673,7 +673,6 @@ elif "작업 모드" in st.session_state.mode:
                             elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
                             elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
 
-                        # 🚨 [신규 필터 적용] 기본 번역 및 모든 전략 키워드에서 한글 완벽 제거
                         pure_trans = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', trans).strip()
                         pure_trans = ' '.join(pure_trans.split())
                         if not pure_trans: pure_trans = trans
@@ -686,7 +685,6 @@ elif "작업 모드" in st.session_state.mode:
                         for i, (name, search_query) in enumerate(strategies):
                             if not search_query: continue
                             
-                            # 타오바오 검색용 순수 중국어 추출 필터
                             pure_keyword = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', search_query).strip()
                             pure_keyword = ' '.join(pure_keyword.split())
                             if not pure_keyword: pure_keyword = search_query
@@ -700,7 +698,7 @@ elif "작업 모드" in st.session_state.mode:
                                 f"키워드: {keyword_input_val} ({name})", 
                                 "키워드분석", 
                                 f"기본 번역: {pure_trans}", 
-                                f'=HYPERLINK("{link}", "🔗 {name.split("/")[0]} 타오바오 검색")'
+                                f'=HYPERLINK("{link}", "🔗 {name.split("/")[0].split(" ")[-1]} 타오바오 검색")'
                             )
                             if is_saved: save_success_count += 1
                         
