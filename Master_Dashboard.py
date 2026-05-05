@@ -47,148 +47,50 @@ st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     
-    /* Global Typography & Reset */
     html, body, [class*="css"], h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select, textarea { 
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
+    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], footer { display: none !important; }
+    header[data-testid="stHeader"] { background: transparent !important; pointer-events: none !important; }
     
-    /* Hide Default Elements */
-    .stDeployButton, [data-testid="stAppDeployButton"], #MainMenu, [data-testid="stToolbar"], footer { 
-        display: none !important; 
-    }
-    
-    /* 모바일 UX: 사이드바 열기 버튼 강제 플로팅 버튼화 */
-    header[data-testid="stHeader"] { 
-        background: transparent !important; 
-        pointer-events: none !important; 
-    }
-    
-    [data-testid="collapsedControl"] {
-        display: flex !important;
-        background: #8B5CF6 !important;
-        border-radius: 8px !important;
-        margin: 12px !important;
-        pointer-events: auto !important; 
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
-        transition: transform 0.2s ease !important;
-    }
-    
-    [data-testid="collapsedControl"]:active {
-        transform: scale(0.9) !important;
-    }
-    
-    [data-testid="collapsedControl"] svg {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        width: 24px !important;
-        height: 24px !important;
-    }
+    [data-testid="collapsedControl"] { display: flex !important; background: #8B5CF6 !important; border-radius: 8px !important; margin: 12px !important; pointer-events: auto !important; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important; transition: transform 0.2s ease !important; }
+    [data-testid="collapsedControl"]:active { transform: scale(0.9) !important; }
+    [data-testid="collapsedControl"] svg { color: #ffffff !important; fill: #ffffff !important; width: 24px !important; height: 24px !important; }
 
-    /* Premium Dark Theme Core */
     .stApp { background-color: #09090b !important; }
     p, label, span { color: #a1a1aa !important; margin-bottom: 0 !important; }
     h1 { color: #fafafa !important; font-weight: 700 !important; font-size: 1.75rem !important; letter-spacing: -0.02em; margin-bottom: 1.5rem !important; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem !important; }
     
-    /* Layout Balancing */
-    .block-container {
-        padding-top: 3rem !important; 
-        padding-bottom: 3rem !important; 
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        max-width: 1400px !important;
-        margin: 0 auto;
-    }
+    .block-container { padding-top: 3rem !important; padding-bottom: 3rem !important; padding-left: 2rem !important; padding-right: 2rem !important; max-width: 1400px !important; margin: 0 auto; }
     @media (min-width: 768px) { .block-container { padding-left: 4rem !important; padding-right: 4rem !important; } }
     div[data-testid="stVerticalBlock"] { gap: 1.2rem !important; }
 
-    /* Sidebar Refinement */
-    [data-testid="stSidebar"] { 
-        background-color: #09090b !important; 
-        border-right: 1px solid rgba(255,255,255,0.08) !important;
-        padding-top: 2rem !important;
-    }
-    .sidebar-title { 
-        color: #fafafa !important;
-        font-size: 1.25rem !important; 
-        font-weight: 800 !important; 
-        letter-spacing: -0.5px;
-        margin-bottom: 0px; 
-    }
+    [data-testid="stSidebar"] { background-color: #09090b !important; border-right: 1px solid rgba(255,255,255,0.08) !important; padding-top: 2rem !important; }
+    .sidebar-title { color: #fafafa !important; font-size: 1.25rem !important; font-weight: 800 !important; letter-spacing: -0.5px; margin-bottom: 0px; }
     
-    /* Navigation Menu */
     [data-testid="stRadio"] > label { display: none !important; }
     [data-testid="stRadio"] div[role="radiogroup"] { gap: 4px; }
-    [data-testid="stRadio"] div[role="radiogroup"] label {
-        background: transparent !important;
-        border: none !important;
-        border-radius: 6px !important;
-        padding: 10px 12px !important; 
-        cursor: pointer; width: 100%; display: flex; align-items: center;
-        font-size: 0.95rem !important; font-weight: 500 !important; color: #a1a1aa !important; 
-        transition: all 0.15s ease !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label:hover {
-        background: rgba(255, 255, 255, 0.05) !important; color: #fafafa !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) { 
-        background: #fafafa !important; 
-        color: #09090b !important; 
-        font-weight: 600 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+    [data-testid="stRadio"] div[role="radiogroup"] label { background: transparent !important; border: none !important; border-radius: 6px !important; padding: 10px 12px !important; cursor: pointer; width: 100%; display: flex; align-items: center; font-size: 0.95rem !important; font-weight: 500 !important; color: #a1a1aa !important; transition: all 0.15s ease !important; }
+    [data-testid="stRadio"] div[role="radiogroup"] label:hover { background: rgba(255, 255, 255, 0.05) !important; color: #fafafa !important; }
+    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) { background: #fafafa !important; color: #09090b !important; font-weight: 600 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     [data-testid="stRadio"] div[role="radiogroup"] label div[data-testid="stMarkdownContainer"] { pointer-events: none; }
     [data-testid="stRadio"] div[role="radiogroup"] label div[data-baseweb="radio"] { display: none !important; }
 
-    /* Modern Inputs */
-    div[data-baseweb="input"] > div, 
-    div[data-baseweb="textarea"] > div, 
-    div[data-baseweb="select"] > div {
-        background-color: #ffffff !important; 
-        border: 1px solid rgba(255,255,255,0.15) !important; 
-        border-radius: 8px !important; 
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    div[data-baseweb="input"]:focus-within > div, 
-    div[data-baseweb="textarea"]:focus-within > div, 
-    div[data-baseweb="select"]:focus-within > div {
-        border-color: #8B5CF6 !important; 
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3) !important;
-    }
-    .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] * { 
-        color: #09090b !important; -webkit-text-fill-color: #09090b !important; 
-        font-size: 0.95rem !important; font-weight: 600 !important;
-    }
+    div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div, div[data-baseweb="select"] > div { background-color: #ffffff !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 8px !important; transition: border-color 0.2s, box-shadow 0.2s; }
+    div[data-baseweb="input"]:focus-within > div, div[data-baseweb="textarea"]:focus-within > div, div[data-baseweb="select"]:focus-within > div { border-color: #8B5CF6 !important; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3) !important; }
+    .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] * { color: #09090b !important; -webkit-text-fill-color: #09090b !important; font-size: 0.95rem !important; font-weight: 600 !important; }
     .stTextInput input, .stNumberInput input, .stTextArea textarea { background-color: transparent !important; }
     ::placeholder { color: #a1a1aa !important; -webkit-text-fill-color: #a1a1aa !important; font-weight: 400 !important; }
     div[data-baseweb="input"] svg, div[data-baseweb="select"] svg { color: #52525b !important; fill: #52525b !important; }
-    ul[role="listbox"], ul[role="listbox"] * { 
-        background-color: #FFFFFF !important; color: #000000 !important; 
-        -webkit-text-fill-color: #000000 !important; font-weight: 600 !important; 
-    }
+    ul[role="listbox"], ul[role="listbox"] * { background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; font-weight: 600 !important; }
 
-    /* Refined Buttons */
-    .stButton>button {
-        background: #18181b !important; color: #fafafa !important; -webkit-text-fill-color: #fafafa !important; 
-        border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 8px !important;
-        padding: 0.5rem 0.4rem !important; font-weight: 500 !important; font-size: 0.85rem !important;
-        white-space: nowrap !important; letter-spacing: -0.3px !important; transition: all 0.2s ease; width: 100%;
-    }
+    .stButton>button { background: #18181b !important; color: #fafafa !important; -webkit-text-fill-color: #fafafa !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 8px !important; padding: 0.5rem 0.4rem !important; font-weight: 500 !important; font-size: 0.85rem !important; white-space: nowrap !important; letter-spacing: -0.3px !important; transition: all 0.2s ease; width: 100%; }
     .stButton>button:hover { background: #27272a !important; border-color: rgba(255,255,255,0.2) !important; }
-    
-    /* Submit Buttons */
-    .stFormSubmitButton>button {
-        background: #fafafa !important; color: #09090b !important; -webkit-text-fill-color: #09090b !important; 
-        border: none !important; border-radius: 8px !important; width: 100%;
-        font-weight: 600 !important; white-space: nowrap !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+    .stFormSubmitButton>button { background: #fafafa !important; color: #09090b !important; -webkit-text-fill-color: #09090b !important; border: none !important; border-radius: 8px !important; width: 100%; font-weight: 600 !important; white-space: nowrap !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .stFormSubmitButton>button:hover { opacity: 0.9; transform: translateY(-1px); }
 
-    /* SaaS Dashboard Cards */
-    .glass-card { 
-        background: #121214; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; 
-        padding: 24px; box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5); margin-bottom: 16px;
-    }
+    .glass-card { background: #121214; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5); margin-bottom: 16px; }
     .glass-card h3 { font-size: 1.05rem; font-weight: 600; color: #fafafa; margin-bottom: 12px; border: none; padding: 0;}
     .glass-card p { font-size: 0.9rem; color: #a1a1aa; line-height: 1.6; margin-bottom: 0px;}
     
@@ -203,7 +105,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 모바일 오토-클로즈 스크립트
 import streamlit.components.v1 as components
 components.html("""
 <script>
@@ -212,24 +113,11 @@ components.html("""
         const btn = doc.createElement('button');
         btn.id = 'humanpick-mobile-btn';
         btn.innerHTML = '☰';
-        Object.assign(btn.style, {
-            position: 'fixed', top: '15px', left: '15px', zIndex: '999999',
-            background: '#8B5CF6', color: '#ffffff', border: 'none',
-            borderRadius: '8px', width: '42px', height: '42px',
-            fontSize: '22px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.5)',
-            cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center'
-        });
-        const toggleVisibility = () => {
-            const isMobile = doc.body.clientWidth <= 768;
-            btn.style.display = isMobile ? 'flex' : 'none';
-        };
+        Object.assign(btn.style, { position: 'fixed', top: '15px', left: '15px', zIndex: '999999', background: '#8B5CF6', color: '#ffffff', border: 'none', borderRadius: '8px', width: '42px', height: '42px', fontSize: '22px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.5)', cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center' });
+        const toggleVisibility = () => { btn.style.display = doc.body.clientWidth <= 768 ? 'flex' : 'none'; };
         doc.defaultView.addEventListener('resize', toggleVisibility);
         toggleVisibility();
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sidebarBtn = doc.querySelector('[data-testid="collapsedControl"]');
-            if (sidebarBtn) { sidebarBtn.click(); }
-        });
+        btn.addEventListener('click', (e) => { e.preventDefault(); const sidebarBtn = doc.querySelector('[data-testid="collapsedControl"]'); if (sidebarBtn) { sidebarBtn.click(); } });
         doc.body.appendChild(btn);
     }
     function setupMobileAutoClose() {
@@ -238,10 +126,7 @@ components.html("""
         menuLabels.forEach(label => {
             if (!label.classList.contains('auto-close-bound')) {
                 label.classList.add('auto-close-bound');
-                label.addEventListener('click', () => {
-                    const closeBtn = doc.querySelector('[data-testid="stSidebarCollapseButton"]');
-                    if (closeBtn) setTimeout(() => closeBtn.click(), 150);
-                });
+                label.addEventListener('click', () => { const closeBtn = doc.querySelector('[data-testid="stSidebarCollapseButton"]'); if (closeBtn) setTimeout(() => closeBtn.click(), 150); });
             }
         });
     }
@@ -256,68 +141,89 @@ def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
 
+# 🚨 [디버깅 추가] 진짜 에러 메시지 추출
 def get_member_worksheet():
     try:
+        # Secrets 로드 시도
         if "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+            try:
+                creds_dict = dict(st.secrets["gcp_service_account"])
+                # private_key 내부의 이스케이프 문자 복원 (디버깅 핵심)
+                if "\\n" in creds_dict["private_key"]:
+                    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+                
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(
+                    creds_dict, 
+                    ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                )
+            except Exception as e:
+                return None, f"1. [Secrets 파싱 에러] 금고(Secrets) 내용이 잘못되었습니다.\n상세: {str(e)}"
         else:
-            if not os.path.exists("credentials.json"): return None
-            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+            if not os.path.exists("credentials.json"): 
+                return None, "1. [파일 없음 에러] gcp_service_account 설정도 없고, credentials.json 파일도 없습니다."
+            try:
+                creds = ServiceAccountCredentials.from_json_keyfile_name(
+                    "credentials.json", 
+                    ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                )
+            except Exception as e:
+                return None, f"1. [JSON 파싱 에러] credentials.json 파일의 구조가 깨졌습니다.\n상세: {str(e)}"
 
-        client = gspread.authorize(creds)
-        sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
-        spreadsheet = client.open_by_key(sheet_id)
+        # 구글 서버 접속 시도
+        try:
+            client = gspread.authorize(creds)
+        except Exception as e:
+            return None, f"2. [인증 실패] 열쇠(Key)는 있지만 구글 서버가 접속을 거부했습니다. (API 미설정 또는 이메일 불일치)\n상세: {str(e)}"
+
+        # 시트 열기 시도
+        try:
+            sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
+            spreadsheet = client.open_by_key(sheet_id)
+        except Exception as e:
+            return None, f"3. [시트 열기 실패] 시트 권한(편집자 공유)이 없거나 삭제된 문서입니다.\n공유해야 할 이메일: {creds.service_account_email}\n상세: {str(e)}"
 
         try:
             worksheet = spreadsheet.worksheet("회원관리")
-            # 🚨 [신규] 기존 시트에도 '등급' 헤더가 없으면 자동 추가 (하위 호환성)
             headers = worksheet.row_values(1)
             if "등급" not in headers:
                 worksheet.update_cell(1, len(headers) + 1, "등급")
+            return worksheet, "성공"
         except gspread.exceptions.WorksheetNotFound:
             worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=7)
             worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일", "등급"])
-        return worksheet
-    except Exception as e:
-        return None
+            return worksheet, "성공"
+        except Exception as e:
+             return None, f"4. [기타 에러] {str(e)}"
 
-# 🚨 DB 연동 다중 로그인 및 등급 검증 함수
+    except Exception as e:
+        return None, f"5. [치명적 시스템 에러] {str(e)}"
+
 def authenticate_user(uid, upw):
-    # 어드민 마스터 계정은 최상위 VIP로 강제 인식
     if uid == "admin" and upw == "1234":
         return True, "마스터", "관리자", "VIP회원", ""
 
-    ws = get_member_worksheet()
+    ws, error_msg = get_member_worksheet()
     if ws is None:
-        return False, None, None, None, "🚨 구글 시트(DB) 연결 실패. 서버 환경을 확인하세요."
+        return False, None, None, None, error_msg # 디버깅 에러 메시지 그대로 출력
 
     records = ws.get_all_records()
     df = pd.DataFrame(records)
 
-    if df.empty or '아이디' not in df.columns:
-        return False, None, None, None, "등록된 회원 정보가 없습니다."
+    if df.empty or '아이디' not in df.columns: return False, None, None, None, "등록된 회원 정보가 없습니다."
 
     user_match = df[(df['아이디'].astype(str) == str(uid)) & (df['비밀번호'].astype(str) == str(upw))]
-
-    if user_match.empty:
-        return False, None, None, None, "아이디 또는 비밀번호가 일치하지 않습니다."
+    if user_match.empty: return False, None, None, None, "아이디 또는 비밀번호가 일치하지 않습니다."
 
     user_info = user_match.iloc[0]
     status = user_info.get('상태', '')
     user_name = user_info.get('이름', '회원')
     user_level = user_info.get('등급', '무료회원')
-    
-    if not user_level: user_level = "무료회원" # 빈칸 예외 처리
+    if not user_level: user_level = "무료회원"
 
-    if status == "승인대기":
-        return False, None, None, None, "⏳ 관리자 승인 대기 중입니다. 승인 후 이용 가능합니다."
-    elif status in ["기간만료", "영구정지"]:
-        return False, None, None, None, f"🚫 접속이 제한된 계정입니다. (상태: {status})"
-    elif status == "이용중":
-        return True, user_name, "일반회원", user_level, ""
-    else:
-        return False, None, None, None, "알 수 없는 계정 상태입니다."
+    if status == "승인대기": return False, None, None, None, "⏳ 관리자 승인 대기 중입니다. 승인 후 이용 가능합니다."
+    elif status in ["기간만료", "영구정지"]: return False, None, None, None, f"🚫 접속이 제한된 계정입니다. (상태: {status})"
+    elif status == "이용중": return True, user_name, "일반회원", user_level, ""
+    else: return False, None, None, None, "알 수 없는 계정 상태입니다."
 
 def parse_korean_currency(val_str):
     try:
@@ -329,10 +235,10 @@ def save_to_google_sheet(item_name, grade, reason, detail_data):
     try:
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
+            if "\\n" in creds_dict["private_key"]: creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
         else:
-            if not os.path.exists("credentials.json"): 
-                return False, "credentials.json 키 파일이 없습니다."
+            if not os.path.exists("credentials.json"): return False, "credentials.json 키 파일이 없습니다."
             creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
         
         client = gspread.authorize(creds)
@@ -344,8 +250,7 @@ def save_to_google_sheet(item_name, grade, reason, detail_data):
         if current_month not in existing_sheets:
             worksheet = spreadsheet.add_worksheet(title=current_month, rows=1000, cols=5)
             worksheet.append_row(["저장 시간", "상품명/분류", "소싱 등급", "판독/요약 리포트", "원문/상세 데이터"])
-        else:
-            worksheet = spreadsheet.worksheet(current_month)
+        else: worksheet = spreadsheet.worksheet(current_month)
             
         worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), item_name, grade, reason, detail_data])
         return True, ""
@@ -359,6 +264,7 @@ def fetch_sourcing_db():
     try:
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
+            if "\\n" in creds_dict["private_key"]: creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
         else:
             if not os.path.exists("credentials.json"): raise FileNotFoundError()
@@ -396,8 +302,7 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
     try:
         models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
         res = requests.get(models_url)
-        if res.status_code != 200: 
-            return f"❌ API 키 인증 실패 (HTTP {res.status_code})\n\n[디버그]\n{res.text}"
+        if res.status_code != 200: return f"❌ API 키 인증 실패 (HTTP {res.status_code})\n\n[디버그]\n{res.text}"
         
         available_names = [m['name'].split('/')[-1] for m in res.json().get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         targets = ['gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-flash'] if selected_model == "자동 (권장)" else [selected_model]
@@ -416,10 +321,8 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                 
                 if gen_res.status_code == 200: 
                     candidate = gen_res.json().get('candidates', [{}])[0]
-                    if 'content' in candidate:
-                        return candidate['content']['parts'][0]['text']
-                    else:
-                        return f"❌ 답변 생성 불가. (사유: {candidate.get('finishReason', '알 수 없음')})"
+                    if 'content' in candidate: return candidate['content']['parts'][0]['text']
+                    else: return f"❌ 답변 생성 불가. (사유: {candidate.get('finishReason', '알 수 없음')})"
                 elif gen_res.status_code in [503, 429]: 
                     last_error = f"{target} (트래픽 지연)"
                     time.sleep(wait_time); wait_time += 2; continue
@@ -430,25 +333,6 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
                     break 
         return f"⚠️ 서버 응답 거부 또는 실패\n\n[구글 원본 에러 메시지]\n{last_error}"
     except Exception as e: return f"❌ 통신 시스템 오류: {e}"
-
-@st.cache_data
-def extract_copywriting_materials():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    target_dir = os.path.join(base_dir, "HQ_Engine", "카피라이팅자료")
-    os.makedirs(target_dir, exist_ok=True)
-    extracted_text, file_list = "", []
-    for filename in os.listdir(target_dir):
-        filepath = os.path.join(target_dir, filename)
-        if os.path.isfile(filepath):
-            file_list.append(filename)
-            try:
-                if filename.lower().endswith('.pdf'):
-                    with open(filepath, 'rb') as f:
-                        for page in PyPDF2.PdfReader(f).pages: extracted_text += (page.extract_text() or "") + "\n"
-                elif filename.lower().endswith('.txt'):
-                    with open(filepath, 'r', encoding='utf-8') as f: extracted_text += f.read() + "\n"
-            except: pass
-    return extracted_text, file_list, target_dir
 
 # --- [3. 시스템 마스터 로그인 및 회원가입 로직] ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -487,7 +371,7 @@ if not st.session_state.logged_in:
                         time.sleep(0.5)
                         rerun_app()
                     else: 
-                        st.error(err_msg)
+                        st.error(f"🚨 로그인 에러 로그: \n\n{err_msg}")
                         
         with tab_signup:
             with st.form("signup_form"):
@@ -501,18 +385,17 @@ if not st.session_state.logged_in:
                         st.warning("모든 항목을 입력해주세요.")
                     else:
                         with st.spinner("가입 처리 중..."):
-                            ws = get_member_worksheet()
+                            ws, error_msg = get_member_worksheet()
                             if ws:
                                 records = ws.get_all_records()
                                 if any(str(r.get('아이디', '')) == new_uid for r in records):
                                     st.error("이미 존재하는 아이디입니다.")
                                 else:
                                     today = datetime.now().strftime("%Y-%m-%d")
-                                    # 🚨 [신규] 기본 가입 시 '무료회원' 등급 자동 할당
                                     ws.append_row([new_uid, new_upw, new_name, "승인대기", "2026-12-31", today, "무료회원"])
                                     st.success("✅ 가입 신청이 완료되었습니다! 관리자 승인 후 로그인 가능합니다.")
                             else:
-                                st.error("구글 시트(DB) 연결에 실패했습니다.")
+                                st.error(f"🚨 가입 에러 로그: \n\n{error_msg}")
 
         st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
@@ -521,7 +404,6 @@ if not st.session_state.logged_in:
 with st.sidebar:
     st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v5.0</span></p>", unsafe_allow_html=True)
     
-    # 🚨 [신규] 등급에 따른 색상 차별화 및 상태창 업데이트
     level_color = "#F59E0B" if "VIP" in st.session_state.user_level else ("#10B981" if "유료" in st.session_state.user_level else "#a1a1aa")
     st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role} | <span style='color:{level_color}; font-weight:600;'>{st.session_state.user_level}</span>)</span></div>", unsafe_allow_html=True)
     
@@ -533,46 +415,28 @@ with st.sidebar:
     if "작업 모드" in st.session_state.mode:
         st.markdown("<div style='height: 16px;'></div><p style='font-size: 0.75rem; color: #52525b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding-left: 12px;'>상세 메뉴</p>", unsafe_allow_html=True)
         
-        # 관리자에게만 '회원 관리' 메뉴 표시
-        menu_options = [
-            "🚀 시스템 홈 (대시보드)",
-            "🗂️ 소싱 DB 관리",
-            "🧪 키워드 분석 (트렌드 발굴)", 
-            "🛑 지재권 리스크 스캐너", 
-            "🏭 공장 판별기 (도매처 검증)", 
-            "💰 정밀 마진 계산기", 
-            "🎯 광고 해부학 (쿠팡 최적화)",
-            "✍️ 카피라이팅 기획소",
-            "📥 영상 분석 추출"
-        ]
-        
-        if st.session_state.user_role == "관리자":
-            menu_options.insert(2, "👥 회원 관리 (어드민)")
+        menu_options = ["🚀 시스템 홈 (대시보드)", "🗂️ 소싱 DB 관리", "🧪 키워드 분석 (트렌드 발굴)", "🛑 지재권 리스크 스캐너", "🏭 공장 판별기 (도매처 검증)", "💰 정밀 마진 계산기", "🎯 광고 해부학 (쿠팡 최적화)", "✍️ 카피라이팅 기획소", "📥 영상 분석 추출"]
+        if st.session_state.user_role == "관리자": menu_options.insert(2, "👥 회원 관리 (어드민)")
 
         menu = st.radio("hidden_label", menu_options, index=0, label_visibility="collapsed")
-    else:
-        menu = "운전모드"
+    else: menu = "운전모드"
 
     st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
     
     key_file_path = os.path.join(os.getcwd(), ".api_key")
     if "api_key_input" not in st.session_state:
         if os.path.exists(key_file_path):
-            with open(key_file_path, "r", encoding="utf-8") as f:
-                st.session_state.api_key_input = f.read().strip()
-        else:
-            st.session_state.api_key_input = ""
+            with open(key_file_path, "r", encoding="utf-8") as f: st.session_state.api_key_input = f.read().strip()
+        else: st.session_state.api_key_input = ""
             
     st.markdown("<p style='font-size:0.75rem; color:#52525b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; padding-left: 12px;'>환경 설정</p>", unsafe_allow_html=True)
-    
     api_key_val = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key_input, label_visibility="collapsed", placeholder="API 키를 입력하세요")
     selected_model = st.selectbox("AI 모델 선택", options=["자동 (권장)", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-1.5-pro"], index=0, label_visibility="collapsed")
     
     c1, c2 = st.columns([1, 1.35]) 
     with c1:
         if st.button("💾 키 저장"): 
-            with open(key_file_path, "w", encoding="utf-8") as f:
-                f.write(api_key_val)
+            with open(key_file_path, "w", encoding="utf-8") as f: f.write(api_key_val)
             st.session_state.api_key_input = api_key_val
             st.success("저장 완료")
     with c2:
@@ -584,61 +448,7 @@ with st.sidebar:
             rerun_app()
 
 # ==========================================
-# --- [5. 메인 화면: 🚗 운전 모드] ---
-# ==========================================
-if "운전 모드" in st.session_state.mode:
-    st.markdown("<h1>🚗 운전 모드 (음성 소싱 에이전트)</h1>", unsafe_allow_html=True)
-    st.info("💡 모바일 키보드의 **[마이크 🎤] 버튼**을 눌러 상품을 말해주세요. AI가 판독하여 시트로 전송합니다.")
-    
-    with st.form("drive_mode_form"):
-        voice_input = st.text_area("🎙️ 상품 정보 입력창 (음성 입력 후 터치)", height=150, placeholder="예: 상업용 초음파 식기세척기 찾아줘. 중국가 1000위안 정도.")
-        uploaded_img = st.file_uploader("📸 현장 사진 업로드 (선택사항)", type=['png', 'jpg', 'jpeg'])
-        submit_voice = st.form_submit_button("🚀 즉시 분석 및 시트 저장")
-
-    if submit_voice:
-        if not st.session_state.api_key_input: 
-            st.error("좌측 사이드바에 API Key를 먼저 입력하고 저장해주세요.")
-        elif not voice_input and not uploaded_img: 
-            st.warning("분석할 텍스트나 사진을 입력해주세요.")
-        else:
-            with st.spinner("AI가 데이터를 추정하고 법무 스캔을 진행 중입니다..."):
-                prompt = "당신은 B2B 구매대행 전문가입니다. 운전 중인 대표님을 위해 즉시 판단하세요.\n"
-                prompt += "1. 단가와 무게를 추정하고 전안법, 전파법 등 통관 여부를 검토.\n"
-                prompt += "2. 아래 JSON 양식으로만 답변. 마진 금액은 반드시 콤마(,)를 찍어서 표기.\n\n"
-                prompt += f"입력 내용: {voice_input}\n\n"
-                prompt += "양식:\n"
-                prompt += '{\n  "Item": "추정된 정확한 상품명",\n  "Grade": "1등급(즉시소싱)",\n  "Profit": "예상 순수익 150,000원",\n  "Reason": "이유 2문장 이내 요약"\n}'
-                
-                res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
-                if res.startswith("❌") or res.startswith("⚠️"):
-                    st.error(res)
-                else:
-                    try:
-                        match = re.search(r'\{.*\}', res, re.DOTALL)
-                        if match:
-                            data = json.loads(match.group(0))
-                            grade_color = "#10B981" if "1" in data.get('Grade', '') or "2" in data.get('Grade', '') else "#F59E0B" if "3" in data.get('Grade', '') else "#EF4444"
-                            
-                            st.markdown(f"""
-                            <div class='glass-card' style='border-left: 4px solid {grade_color};'>
-                                <h3 style='color:{grade_color}; margin-top:0;'>{data.get('Grade', '')}</h3>
-                                <h2 style='margin-bottom:12px; color:#fafafa; border:none; padding:0;'>{data.get('Item', '')}</h2>
-                                <p style='font-size: 1.1rem; color:#fafafa;'><strong>💰 {data.get('Profit', '')}</strong></p>
-                                <p style='color:#a1a1aa; line-height:1.6; margin-top:8px;'><strong>판독 리포트:</strong> {data.get('Reason', '')}</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            is_saved, err_msg = save_to_google_sheet(data.get('Item', ''), data.get('Grade', ''), data.get('Reason', ''), voice_input)
-                            if is_saved: 
-                                st.cache_data.clear() 
-                                st.success("✅ 공유된 [구글 시트]에 투두 리스트가 추가되었습니다!")
-                            else: 
-                                st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
-                        else: st.error(f"데이터 파싱 실패. 원본 응답:\n{res}")
-                    except Exception as e: st.error(f"오류 발생: {e}\n\n원본 응답:\n{res}")
-
-# ==========================================
-# --- [6. 메인 화면: 💻 작업 모드] ---
+# --- [5. 메인 화면: 💻 작업 모드] ---
 # ==========================================
 elif "작업 모드" in st.session_state.mode:
     
@@ -654,64 +464,42 @@ elif "작업 모드" in st.session_state.mode:
         st.markdown("<h1>소싱 DB 관리</h1>", unsafe_allow_html=True)
         
         col_db1, col_db2 = st.columns([4, 1])
-        with col_db1:
-            st.info("💡 각 모듈에서 저장한 데이터를 실시간으로 확인하고 관리합니다.")
+        with col_db1: st.info("💡 각 모듈에서 저장한 데이터를 실시간으로 확인하고 관리합니다.")
         with col_db2:
             if st.button("🔄 새로고침", use_container_width=True):
                 st.cache_data.clear() 
                 rerun_app()
 
-        with st.spinner("소싱 DB 데이터를 불러오는 중입니다..."):
-            df_db, db_status = fetch_sourcing_db()
-            
+        with st.spinner("소싱 DB 데이터를 불러오는 중입니다..."): df_db, db_status = fetch_sourcing_db()
         st.markdown(f"<p style='color:#a1a1aa; font-size:0.85rem; margin-bottom:12px;'>상태: {db_status}</p>", unsafe_allow_html=True)
         
-        if not df_db.empty:
-            st.dataframe(df_db, use_container_width=True, height=450)
-        else:
-            st.warning("아직 저장된 소싱 데이터가 없습니다.")
+        if not df_db.empty: st.dataframe(df_db, use_container_width=True, height=450)
+        else: st.warning("아직 저장된 소싱 데이터가 없습니다.")
 
-        st.markdown("""
-        <div style="margin-top: 16px;">
-            <a href="https://docs.google.com/spreadsheets/d/1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0/edit?usp=sharing" target="_blank" style="display:block; text-align:center; background: #fafafa; color:#09090b; padding:12px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; transition: 0.2s;">
-                📝 구글 시트 원본 열람 및 직접 수정하기
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div style="margin-top: 16px;"><a href="https://docs.google.com/spreadsheets/d/1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0/edit?usp=sharing" target="_blank" style="display:block; text-align:center; background: #fafafa; color:#09090b; padding:12px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; transition: 0.2s;">📝 구글 시트 원본 열람 및 직접 수정하기</a></div>""", unsafe_allow_html=True)
 
     elif menu == "👥 회원 관리 (어드민)":
         st.markdown("<h1>💎 MetaSeller 회원 관리 시스템</h1>", unsafe_allow_html=True)
+        ws, error_msg = get_member_worksheet()
         
-        ws = get_member_worksheet()
-        if ws is None:
-            st.error("🚨 구글 시트 연결에 실패했습니다. (Secrets 설정 혹은 credentials.json 확인)")
+        if ws is None: st.error(f"🚨 구글 시트 연결 에러 상세:\n\n{error_msg}")
         else:
             data = ws.get_all_records()
             df = pd.DataFrame(data)
 
-            # [1] 현재 등록된 회원 목록
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #38BDF8;'>현재 등록된 회원 목록</h3>", unsafe_allow_html=True)
-            if not df.empty:
-                st.dataframe(df, use_container_width=True, hide_index=True)
-            else:
-                st.info("아직 등록된 회원이 없습니다.")
+            st.markdown("<div class='glass-card'><h3 style='color: #38BDF8;'>현재 등록된 회원 목록</h3>", unsafe_allow_html=True)
+            if not df.empty: st.dataframe(df, use_container_width=True, hide_index=True)
+            else: st.info("아직 등록된 회원이 없습니다.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # 🚨 [2] 기존 회원 권한 및 등급 수정 폼
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #F59E0B;'>회원 상태 및 등급 변경</h3>", unsafe_allow_html=True)
-            
+            st.markdown("<div class='glass-card'><h3 style='color: #F59E0B;'>회원 상태 및 등급 변경</h3>", unsafe_allow_html=True)
             if not df.empty:
                 user_ids = df['아이디'].astype(str).tolist()
                 with st.form("edit_member_status_form"):
                     col1, col2, col3 = st.columns([1.5, 1, 1])
-                    with col1:
-                        target_id = st.selectbox("업데이트할 회원 아이디 선택", user_ids)
-                    with col2:
-                        new_status = st.selectbox("새로운 상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"], index=1)
-                    with col3:
-                        new_level = st.selectbox("회원 등급 지정", ["무료회원", "유료회원", "VIP회원"], index=0)
+                    with col1: target_id = st.selectbox("업데이트할 회원 아이디 선택", user_ids)
+                    with col2: new_status = st.selectbox("새로운 상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"], index=1)
+                    with col3: new_level = st.selectbox("회원 등급 지정", ["무료회원", "유료회원", "VIP회원"], index=0)
                         
                     submit_edit = st.form_submit_button("상태 및 등급 업데이트 (Auto-Save)")
                     
@@ -721,29 +509,20 @@ elif "작업 모드" in st.session_state.mode:
                                 id_list = ws.col_values(1)
                                 if target_id in id_list:
                                     row_idx = id_list.index(target_id) + 1
-                                    
                                     headers = ws.row_values(1)
                                     status_col = headers.index("상태") + 1 if "상태" in headers else 4
                                     level_col = headers.index("등급") + 1 if "등급" in headers else 7
-                                    
                                     ws.update_cell(row_idx, status_col, new_status)
                                     ws.update_cell(row_idx, level_col, new_level)
-                                    
                                     st.success(f"✅ [{target_id}] 님의 권한이 상태: '{new_status}' / 등급: '{new_level}'(으)로 즉시 변경되었습니다!")
                                     time.sleep(1)
                                     rerun_app()
-                                else:
-                                    st.error("해당 아이디를 찾을 수 없습니다.")
-                            except Exception as e:
-                                st.error(f"업데이트 실패: {e}")
-            else:
-                st.warning("먼저 회원을 등록해주세요.")
+                                else: st.error("해당 아이디를 찾을 수 없습니다.")
+                            except Exception as e: st.error(f"업데이트 실패: {e}")
+            else: st.warning("먼저 회원을 등록해주세요.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # [3] 신규 회원 강제/수동 발급 (초기 등급 포함)
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #EC4899;'>신규 회원 강제 발급</h3>", unsafe_allow_html=True)
-
+            st.markdown("<div class='glass-card'><h3 style='color: #EC4899;'>신규 회원 강제 발급</h3>", unsafe_allow_html=True)
             with st.form(key='add_member_form', clear_on_submit=True):
                 col1, col2 = st.columns(2)
                 with col1:
@@ -752,26 +531,18 @@ elif "작업 모드" in st.session_state.mode:
                 with col2:
                     new_name = st.text_input("이름 / 회사명")
                     c_sub1, c_sub2 = st.columns(2)
-                    with c_sub1:
-                        status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
-                    with c_sub2:
-                        new_level = st.selectbox("초기 등급", ["무료회원", "유료회원", "VIP회원"], index=0)
+                    with c_sub1: status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
+                    with c_sub2: new_level = st.selectbox("초기 등급", ["무료회원", "유료회원", "VIP회원"], index=0)
                     
                 submit_add = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
-                
                 if submit_add:
-                    if new_id.strip() == "" or new_pw.strip() == "":
-                        st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
+                    if new_id.strip() == "" or new_pw.strip() == "": st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
                     else:
                         headers = ws.row_values(1)
                         today = datetime.now().strftime("%Y-%m-%d")
                         row_data = [new_id, new_pw, new_name, status, "2026-12-31", today]
-                        
-                        if "등급" in headers:
-                            row_data.append(new_level)
-                        else:
-                            row_data.append(new_level)
-                            
+                        if "등급" in headers: row_data.append(new_level)
+                        else: row_data.append(new_level)
                         ws.append_row(row_data)
                         st.success(f"[{new_name}] 님의 권한이 성공적으로 발급되어 시트에 자동 저장되었습니다!")
                         time.sleep(1) 
@@ -780,18 +551,9 @@ elif "작업 모드" in st.session_state.mode:
 
     elif menu == "🧪 키워드 분석 (트렌드 발굴)":
         st.markdown("<h1>트렌드 키워드 분석 & 번역</h1>", unsafe_allow_html=True)
-        
         col1, col2 = st.columns(2, gap="medium")
         with col1:
-            st.markdown("""
-            <div class='glass-card'>
-                <h3>📊 1. 네이버 데이터랩 검색</h3>
-                <p>쇼핑인사이트에서 현재 뜨고 있는 키워드를 발굴하세요.</p>
-                <a href="https://datalab.naver.com/shoppingInsight/sCategory.naver" target="_blank" style="display:block; text-align:center; background: transparent; border: 1px solid #10b981; color:#10b981; padding:10px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; margin-top:16px;">
-                    📈 네이버 데이터랩 열기
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("""<div class='glass-card'><h3>📊 1. 네이버 데이터랩 검색</h3><p>쇼핑인사이트에서 현재 뜨고 있는 키워드를 발굴하세요.</p><a href="https://datalab.naver.com/shoppingInsight/sCategory.naver" target="_blank" style="display:block; text-align:center; background: transparent; border: 1px solid #10b981; color:#10b981; padding:10px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; margin-top:16px;">📈 네이버 데이터랩 열기</a></div>""", unsafe_allow_html=True)
             
         with col2:
             st.markdown("<div class='glass-card' style='padding-bottom:12px;'><h3>🇨🇳 2. 황금 키워드 번역기 (자동 저장)</h3><p>한국어 상품명을 입력하면 전략 키워드로 변환 후 DB에 자동 저장됩니다.</p></div>", unsafe_allow_html=True)
@@ -804,14 +566,9 @@ elif "작업 모드" in st.session_state.mode:
             elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
             else:
                 with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
-                    prompt = f"당신은 타오바오 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 소싱용으로 번역하세요.\n"
-                    prompt += "3가지 소싱 전략 검색어를 만드세요: 1.디자인/감성 2.실용성/기능 3.공장직영/가성비\n"
-                    prompt += "형식:\n[TRANSLATION]기본키워드\n[STRATEGY_1]전략1\n[STRATEGY_2]전략2\n[STRATEGY_3]전략3"
-                    
+                    prompt = f"당신은 타오바오 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 소싱용으로 번역하세요.\n3가지 소싱 전략 검색어를 만드세요: 1.디자인/감성 2.실용성/기능 3.공장직영/가성비\n형식:\n[TRANSLATION]기본키워드\n[STRATEGY_1]전략1\n[STRATEGY_2]전략2\n[STRATEGY_3]전략3"
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
-                    
-                    if res.startswith("❌") or res.startswith("⚠️"): 
-                        st.error(res)
+                    if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
                     else:
                         trans, s1, s2, s3 = "", "", "", ""
                         for line in res.replace('**', '').split('\n'):
@@ -830,33 +587,17 @@ elif "작업 모드" in st.session_state.mode:
                             if not search_query: continue
                             link = f"https://s.taobao.com/search?q={quote(search_query)}"
                             db_save_text += f"{name.split(' ')[1]}: {search_query} ({link}) | "
-                            
                             with kw_cols[i]:
-                                st.markdown(f"""
-                                <div class='glass-card' style='text-align:center;'>
-                                    <span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span>
-                                    <span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span>
-                                    <a href="{link}" target="_blank" style="text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;">
-                                        🔍 타오바오 검색
-                                    </a>
-                                </div>
-                                """, unsafe_allow_html=True)
+                                st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{search_query}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
                                 
-                        is_saved, err_msg = save_to_google_sheet(
-                            f"키워드: {keyword_input_val}", 
-                            "키워드분석", 
-                            f"기본 번역: {trans}", 
-                            db_save_text
-                        )
+                        is_saved, err_msg = save_to_google_sheet(f"키워드: {keyword_input_val}", "키워드분석", f"기본 번역: {trans}", db_save_text)
                         if is_saved: 
                             st.cache_data.clear()
                             st.info("💾 소싱 DB에 황금 키워드가 성공적으로 자동 저장되었습니다!")
-                        else:
-                            st.error(f"⚠️ 구글 시트 자동 저장 실패: {err_msg}")
+                        else: st.error(f"⚠️ 구글 시트 자동 저장 실패: {err_msg}")
 
     elif menu == "🛑 지재권 리스크 스캐너":
         st.markdown("<h1>지재권 리스크 스캐너</h1>", unsafe_allow_html=True)
-        
         col_a, col_b = st.columns(2, gap="medium")
         with col_a:
             st.markdown("<div class='glass-card'><h3>🚨 로컬 DB 금칙어 스캔</h3><p>폴더 내 엑셀/CSV 데이터를 바탕으로 금칙어를 1초 만에 걸러냅니다.</p></div>", unsafe_allow_html=True)
@@ -867,8 +608,7 @@ elif "작업 모드" in st.session_state.mode:
             if btn_local:
                 current_dir = os.getcwd()
                 db_files = [f for f in os.listdir(current_dir) if f.lower().endswith(('.csv', '.xlsx', '.xls')) and not f.startswith("~$")]
-                if not db_files: 
-                    st.error("❌ 현재 폴더에 엑셀/CSV DB 파일이 없습니다.")
+                if not db_files: st.error("❌ 현재 폴더에 엑셀/CSV DB 파일이 없습니다.")
                 elif keyword_input_local:
                     db_source = db_files[0]
                     file_path = os.path.join(current_dir, db_source)
@@ -896,13 +636,10 @@ elif "작업 모드" in st.session_state.mode:
                 elif not keyword_input_ai: st.warning("상품 정보를 입력하세요.")
                 else:
                     with st.spinner("AI 관세사 분석 및 자동 저장 중..."):
-                        prompt = "이커머스 전문 관세사/변호사로서 통관 리스크 및 법적 리스크를 진단하세요.\n"
-                        prompt += "결과는 반드시 JSON 형식으로만 출력하세요.\n"
+                        prompt = "이커머스 전문 관세사/변호사로서 통관 리스크 및 법적 리스크를 진단하세요.\n결과는 반드시 JSON 형식으로만 출력하세요.\n"
                         prompt += '{\n  "Level": "안전", \n  "IP_Risk": "결과(1문장)",\n  "Cert_Risk": "결과(1문장)",\n  "Ban_Risk": "결과(1문장)",\n  "Final_Action": "최종 판결(1문장)"\n}\n'
                         prompt += f"[데이터]: {keyword_input_ai}"
-                        
                         res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
-                        
                         if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
                         else:
                             try:
@@ -911,23 +648,8 @@ elif "작업 모드" in st.session_state.mode:
                                     data = json.loads(match.group(0))
                                     level = data.get("Level", "위험")
                                     border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
-                                    
-                                    st.markdown(f"""
-                                    <div class='glass-card' style='border-left: 4px solid {border_color};'>
-                                        <h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3>
-                                        <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div>
-                                        <div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div>
-                                        <div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div>
-                                        <div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'>
-                                            <span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                    
-                                    is_saved, err_msg = save_to_google_sheet(
-                                        keyword_input_ai, f"법무진단: {level}", data.get('Final_Action', ''), 
-                                        f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}"
-                                    )
+                                    st.markdown(f"<div class='glass-card' style='border-left: 4px solid {border_color};'><h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div><div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'><span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span></div></div>", unsafe_allow_html=True)
+                                    is_saved, err_msg = save_to_google_sheet(keyword_input_ai, f"법무진단: {level}", data.get('Final_Action', ''), f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}")
                                     if is_saved: 
                                         st.cache_data.clear()
                                         st.info("💾 진단 결과가 소싱 DB에 안전하게 자동 저장되었습니다!")
@@ -950,22 +672,14 @@ elif "작업 모드" in st.session_state.mode:
         score = min(score, 100)
         with col2:
             res_t, t_c = ("✅ 즉시 소싱", "#10B981") if score>=80 else (("⚠️ 주의 필요", "#F59E0B") if score>=50 else ("❌ 소싱 금지", "#EF4444"))
-            st.markdown(f"""
-            <div class='glass-card' style='text-align:center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items:center; min-height:300px;'>
-                <p style='font-weight:600; margin-bottom:12px; color:#a1a1aa; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em;'>신뢰도 점수</p>
-                <h2 style='color:{t_c}; font-size:4.5rem; margin:0; font-weight:800; line-height:1; border:none;'>{score}<span style='font-size:1.5rem;'>점</span></h2>
-                <h3 style='color:{t_c}; margin-top:16px; font-size:1.5rem; font-weight:600;'>{res_t}</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='glass-card' style='text-align:center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items:center; min-height:300px;'><p style='font-weight:600; margin-bottom:12px; color:#a1a1aa; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em;'>신뢰도 점수</p><h2 style='color:{t_c}; font-size:4.5rem; margin:0; font-weight:800; line-height:1; border:none;'>{score}<span style='font-size:1.5rem;'>점</span></h2><h3 style='color:{t_c}; margin-top:16px; font-size:1.5rem; font-weight:600;'>{res_t}</h3></div>", unsafe_allow_html=True)
 
     elif menu == "💰 정밀 마진 계산기":
         st.markdown("<h1>정밀 마진 계산기</h1>", unsafe_allow_html=True)
-        
         col_in, col_res = st.columns([1.2, 1], gap="large")
         with col_in:
             st.markdown("<div class='glass-card'><h3>📝 상품 및 물류 스펙</h3>", unsafe_allow_html=True)
             item_name = st.text_input("소싱 상품명 (셀러픽 업로드용):", value="상업용 대용량 제빙기 50kg")
-            
             c_p1, c_p2 = st.columns(2)
             with c_p1: 
                 cny_price = st.number_input("중국 원가 (¥)", value=50.0, step=1.0)
@@ -973,13 +687,11 @@ elif "작업 모드" in st.session_state.mode:
             with c_p2: 
                 cny_shipping = st.number_input("중국 내 배송비 (¥)", value=0.0, step=1.0)
                 apply_tax = st.checkbox("🚨 관부가세 적용 ($150 초과)")
-                
             c_w1, c_w2, c_w3, c_w4 = st.columns(4)
             with c_w1: weight = st.number_input("무게 (kg)", value=2.0, step=0.5)
             with c_w2: width = st.number_input("가로 (cm)", value=30.0, step=1.0)
             with c_w3: length = st.number_input("세로 (cm)", value=30.0, step=1.0)
             with c_w4: height = st.number_input("높이 (cm)", value=30.0, step=1.0)
-                
             c_s1, c_s2 = st.columns(2)
             with c_s1: sell_price = st.number_input("국내 판매가 (₩)", value=35000.0, step=1000.0)
             with c_s2: market_fee_rate = st.number_input("마켓 수수료율 (%)", value=13.0, step=0.1)
@@ -987,18 +699,12 @@ elif "작업 모드" in st.session_state.mode:
 
         if weight <= 0.5: base_shipping = 4300
         else: base_shipping = 4950 + math.ceil(max(0, weight - 1) * 2) * 600
-
-        max_side = max(width, length, height)
-        sum_sides = width + length + height
+        max_side = max(width, length, height); sum_sides = width + length + height
         is_kd = (weight >= 20) or (max_side >= 100) or (sum_sides >= 160)
 
-        domestic_fee = 0
-        delivery_type = "CJ대한통운"
-        delivery_color = "#38BDF8" 
-        
+        domestic_fee = 0; delivery_type = "CJ대한통운"; delivery_color = "#38BDF8" 
         if is_kd:
-            delivery_type = "경동화물(이관)"
-            delivery_color = "#F87171" 
+            delivery_type = "경동화물(이관)"; delivery_color = "#F87171" 
             vol_fee = 3000 + max(0, math.ceil(((width * length * height) - 20000)/10000) * 500)
             weight_fee = 6000 if weight <= 20 else weight * 350
             domestic_fee = math.ceil(max(vol_fee, weight_fee) * 1.22)
@@ -1015,29 +721,14 @@ elif "작업 모드" in st.session_state.mode:
         profit_color = "#10B981" if net_profit > 0 else "#EF4444"
 
         with col_res:
-            st.markdown(f"""
-            <div class='glass-card'>
-                <h3 style='margin-bottom:20px;'>📊 재무 분석 (예상 비용)</h3>
-                <div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>배송사</span><strong style='color:{delivery_color};'>{delivery_type}</strong></div>
-                <div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>기본 해운비</span><strong style='color:#fafafa;'>{int(base_shipping):,} 원</strong></div>
-                <div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>국내 추가 배송비</span><strong style='color:#fafafa;'>{int(domestic_fee):,} 원</strong></div>
-                <div style='display:flex; justify-content:space-between; margin-bottom:16px;'><span style='color:#a1a1aa;'>관부가세</span><strong style='color:#fafafa;'>{int(tax):,} 원</strong></div>
-                <div style='display:flex; justify-content:space-between; font-size:1.1rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;'><span style='color:#fafafa;'>총 원가</span><strong style='color:#EF4444;'>{int(total_cost):,} 원</strong></div>
-            </div>
-            <div class='highlight-box'>
-                <div class='highlight-title'>예상 순수익</div>
-                <div class='highlight-value' style='color:{profit_color};'>{int(net_profit):,} 원</div>
-                <div style='color:#a1a1aa; font-size:1rem; margin-top:4px;'>(마진율: <span style='color:{profit_color}; font-weight:600;'>{margin_rate:.1f}%</span>)</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='glass-card'><h3 style='margin-bottom:20px;'>📊 재무 분석 (예상 비용)</h3><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>배송사</span><strong style='color:{delivery_color};'>{delivery_type}</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>기본 해운비</span><strong style='color:#fafafa;'>{int(base_shipping):,} 원</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>국내 추가 배송비</span><strong style='color:#fafafa;'>{int(domestic_fee):,} 원</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:16px;'><span style='color:#a1a1aa;'>관부가세</span><strong style='color:#fafafa;'>{int(tax):,} 원</strong></div><div style='display:flex; justify-content:space-between; font-size:1.1rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;'><span style='color:#fafafa;'>총 원가</span><strong style='color:#EF4444;'>{int(total_cost):,} 원</strong></div></div><div class='highlight-box'><div class='highlight-title'>예상 순수익</div><div class='highlight-value' style='color:{profit_color};'>{int(net_profit):,} 원</div><div style='color:#a1a1aa; font-size:1rem; margin-top:4px;'>(마진율: <span style='color:{profit_color}; font-weight:600;'>{margin_rate:.1f}%</span>)</div></div>", unsafe_allow_html=True)
             
             df = pd.DataFrame([{"상품명": item_name, "판매가": int(sell_price), "원가(위안)": int(cny_price), "원가(원)": int(total_cost - platform_fee), "재고수량": 999, "배송비": 0, "순수익": int(net_profit), "마진율(%)": round(margin_rate, 1)}])
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer: df.to_excel(writer, index=False)
             
             c_btn1, c_btn2 = st.columns(2)
-            with c_btn1:
-                st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"SellerPick_{item_name[:5]}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with c_btn1: st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"SellerPick_{item_name[:5]}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with c_btn2:
                 if st.button("✅ 마진 분석 확정 및 DB 자동 저장", use_container_width=True, key="save_margin_db"):
                     with st.spinner("구글 시트로 데이터 전송 중..."):
@@ -1062,13 +753,7 @@ elif "작업 모드" in st.session_state.mode:
         net_margin = selling_price - (cost_price + fulfillment_fee + commission_cost)
         target_roas = 0 if net_margin <= 0 else round((selling_price / net_margin) * 100, 2)
         
-        st.markdown(f"""
-        <div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'>
-            <div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>예상 마진</span><br><strong style='color:{"#10B981" if net_margin>0 else "#EF4444"}; font-size:1.5rem;'>{net_margin:,} 원</strong></div>
-            <div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>BEP ROAS (본전 마지노선)</span><br><strong style='color:#FBBF24; font-size:1.5rem;'>{target_roas:,} %</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(f"<div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'><div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>예상 마진</span><br><strong style='color:{\"#10B981\" if net_margin>0 else \"#EF4444\"}; font-size:1.5rem;'>{net_margin:,} 원</strong></div><div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>BEP ROAS (본전 마지노선)</span><br><strong style='color:#FBBF24; font-size:1.5rem;'>{target_roas:,} %</strong></div></div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("쿠팡 '검색어 리포트' 엑셀/CSV 업로드", type=["csv", "xlsx"])
 
         if uploaded_file is not None:
@@ -1076,7 +761,6 @@ elif "작업 모드" in st.session_state.mode:
                 with st.spinner("해부 중..."):
                     if uploaded_file.name.endswith('.csv'): df = pd.read_csv(uploaded_file)
                     else: df = pd.read_excel(uploaded_file)
-                
                 cols = df.columns
                 kw_col = next((c for c in cols if '키워드' in c or '검색어' in c), None)
                 spend_col = next((c for c in cols if '광고비' in c or '비용' in c), None)
@@ -1086,38 +770,30 @@ elif "작업 모드" in st.session_state.mode:
 
                 if not all([kw_col, spend_col, conv_col, sales_col, click_col]): st.error("🚨 엑셀/CSV 형식이 올바르지 않습니다.")
                 else:
-                    for col in [spend_col, conv_col, sales_col, click_col]:
-                        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-
+                    for col in [spend_col, conv_col, sales_col, click_col]: df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
                     df['ROAS'] = (df[sales_col] / df[spend_col] * 100).fillna(0).round(2)
                     tab1, tab2, tab3 = st.tabs(["🔥 출혈 키워드", "⭐ 효자 키워드", "🤖 AI 진단 리포트"])
-                    
                     with tab1:
                         bleed_df = df[(df[click_col] >= 10) & (df[conv_col] == 0) & (df[spend_col] > 0)].sort_values(by=spend_col, ascending=False)
                         st.dataframe(bleed_df[[kw_col, click_col, spend_col, conv_col]], use_container_width=True, height=250)
-
                     with tab2:
                         good_df = df[(df['ROAS'] >= target_roas) & (df[conv_col] >= 2)].sort_values(by='ROAS', ascending=False)
                         st.dataframe(good_df[[kw_col, spend_col, sales_col, 'ROAS', conv_col]], use_container_width=True, height=250)
-
                     with tab3:
                         if st.button("✨ 핵심 요약본 AI 분석", use_container_width=True):
                             if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
                             else:
                                 with st.spinner("광고 리포트를 분석 중..."):
                                     top_keywords = df.nlargest(3, spend_col)[[kw_col, spend_col, 'ROAS']].to_dict('records')
-                                    prompt = f"쿠팡 광고 개선 플랜 3가지.\n목표 ROAS: {target_roas}%, 비용Top3: {top_keywords}"
-                                    st.success(generate_content_auto(prompt, st.session_state.api_key_input, selected_model), icon="🎯")
+                                    st.success(generate_content_auto(f"쿠팡 광고 개선 플랜 3가지.\n목표 ROAS: {target_roas}%, 비용Top3: {top_keywords}", st.session_state.api_key_input, selected_model), icon="🎯")
             except Exception as e: st.error(f"오류: {e}")
 
     elif menu == "✍️ 카피라이팅 기획소":
         st.markdown("<h1>실전 카피라이팅 기획소</h1>", unsafe_allow_html=True)
-        
         col_copy1, col_copy2 = st.columns(2, gap="medium")
         with col_copy1:
             st.markdown("<div class='glass-card'><h3>📚 1. 비법서 기반 카피 연성</h3></div>", unsafe_allow_html=True)
             ref_text, file_list, folder_path = extract_copywriting_materials()
-            
             with st.form("form_copy_extract", clear_on_submit=False):
                 product_desc = st.text_area("✨ 상품 특징 입력:", placeholder="예: 직장인용 거북목 예방 메모리폼 베개", height=100, key="c1")
                 btn_extract = st.form_submit_button("🚀 매력적인 카피 추출", use_container_width=True)
@@ -1134,27 +810,23 @@ elif "작업 모드" in st.session_state.mode:
             elif not product_desc: st.warning("상품의 특징을 입력해주세요.")
             else:
                 with st.spinner("카피라이팅을 기획 중입니다..."):
-                    res = generate_content_auto(f"자료 기반 카피 제안. 자료:{ref_text[:2000]} 상품:{product_desc} 출력: 1.후킹멘트 2.상품명 3.인트로", st.session_state.api_key_input, selected_model)
-                    st.success(res)
+                    st.success(generate_content_auto(f"자료 기반 카피 제안. 자료:{ref_text[:2000]} 상품:{product_desc} 출력: 1.후킹멘트 2.상품명 3.인트로", st.session_state.api_key_input, selected_model))
 
         if btn_strategy:
             if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
             elif not v_desc and not c_data: st.warning("분석할 데이터를 입력해주세요.")
             else:
                 with st.spinner("경쟁사 전략을 역추적 중입니다..."): 
-                    res = generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model)
-                    st.success(res)
+                    st.success(generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model))
 
     elif menu == "📥 영상 분석 추출":
         st.markdown("<h1>영상 분석 및 워터마크 추출</h1>", unsafe_allow_html=True)
         col_ext1, col_ext2 = st.columns(2, gap="medium")
-        
         with col_ext1:
             st.markdown("<div class='glass-card'><h3>🔍 1. 숏폼 리서치 퀵 링크</h3></div>", unsafe_allow_html=True)
             with st.form("form_media_search", clear_on_submit=False):
                 short_query = st.text_input("검색어 입력:", placeholder="예: 여름 원피스", label_visibility="collapsed")
                 auto_translate = st.checkbox("🇨🇳 도유인 검색 시 중국어 자동 번역", value=True)
-                
                 st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
                 cd, ct, cy = st.columns(3, gap="small"); cr, cn, ce = st.columns(3, gap="small")
                 with cd: btn_dy = st.form_submit_button("🇨🇳 도유인", use_container_width=True)
