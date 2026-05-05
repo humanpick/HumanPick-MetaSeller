@@ -10,7 +10,6 @@ import math
 import json
 import re
 from datetime import datetime
-import webbrowser
 from urllib.parse import quote 
 from io import BytesIO
 
@@ -140,6 +139,21 @@ components.html("""
 def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
+
+# 🚨 [신규] 클라우드 환경용 웹 브라우저 강제 호출 및 팝업 차단 방어 함수
+def cloud_new_tab(url, platform_name):
+    # 1단계: 자바스크립트로 강제 팝업 시도
+    st.components.v1.html(f"<script>window.parent.open('{url}', '_blank');</script>", height=0)
+    # 2단계: 팝업 차단 대비 확실한 수동 클릭 버튼 제공
+    st.markdown(f"""
+    <div style='background: rgba(139, 92, 246, 0.1); border: 1px solid #8B5CF6; border-radius: 8px; padding: 16px; text-align: center; margin-top: 12px;'>
+        <p style='color: #fafafa; font-size: 0.95rem; margin-bottom: 8px;'>✨ <strong>{platform_name}</strong> 연결 준비 완료!</p>
+        <p style='color: #a1a1aa; font-size: 0.85rem; margin-bottom: 12px;'>(브라우저 팝업이 차단되어 창이 열리지 않는다면 아래 버튼을 클릭하세요)</p>
+        <a href="{url}" target="_blank" style="background: #8B5CF6; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.2s;">
+            👉 결과 새 창으로 열기
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 
 def get_member_worksheet():
     try:
@@ -770,9 +784,7 @@ elif "작업 모드" in st.session_state.mode:
                                     border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
                                     st.markdown(f"<div class='glass-card' style='border-left: 4px solid {border_color};'><h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div><div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'><span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span></div></div>", unsafe_allow_html=True)
                                     
-                                    # 🚨 [신규] 엔터(줄바꿈)가 들어가서 엑셀 칸이 늘어나는 현상 방지
                                     clean_keyword_input_ai = keyword_input_ai.replace('\n', ' ').strip()
-                                    
                                     is_saved, err_msg = save_to_google_sheet(
                                         clean_keyword_input_ai, 
                                         f"법무진단: {level}", 
@@ -982,16 +994,39 @@ elif "작업 모드" in st.session_state.mode:
             if btn_dy:
                 q = short_query
                 if short_query and auto_translate and st.session_state.api_key_input:
-                    cn_res = generate_content_auto(f"'{short_query}'를 중국어로 번역해. 단어 1개.", st.session_state.api_key_input, selected_model).strip()
-                    if not cn_res.startswith("❌"): q = cn_res
-                webbrowser.open_new_tab(f"https://www.douyin.com/search/{quote(q)}" if short_query else "https://www.douyin.com/")
-            if btn_tt: webbrowser.open_new_tab(f"https://www.tiktok.com/search?q={quote(short_query)}" if short_query else "https://www.tiktok.com/explore")
-            if btn_yt: webbrowser.open_new_tab(f"https://www.youtube.com/results?search_query={quote(short_query)}+shorts" if short_query else "https://www.youtube.com/shorts/")
-            if btn_ig: webbrowser.open_new_tab(f"https://www.instagram.com/explore/search/keyword/?q={quote(short_query)}" if short_query else "https://www.instagram.com/reels/")
-            if btn_nv: webbrowser.open_new_tab(f"https://search.naver.com/search.naver?query={quote(short_query)}&where=video" if short_query else "https://tv.naver.com/r")
+                    with st.spinner("🇨🇳 도유인 검색용 중국어 번역 중..."):
+                        cn_res = generate_content_auto(f"'{short_query}'를 중국어 간체자로 번역해. 단어 1개.", st.session_state.api_key_input, selected_model).strip()
+                        if not cn_res.startswith("❌"): q = cn_res
+                url = f"https://www.douyin.com/search/{quote(q)}" if short_query else "https://www.douyin.com/"
+                cloud_new_tab(url, "도유인")
+                
+            if btn_tt: 
+                url = f"https://www.tiktok.com/search?q={quote(short_query)}" if short_query else "https://www.tiktok.com/explore"
+                cloud_new_tab(url, "틱톡")
+                
+            if btn_yt: 
+                url = f"https://www.youtube.com/results?search_query={quote(short_query)}+shorts" if short_query else "https://www.youtube.com/shorts/"
+                cloud_new_tab(url, "유튜브 숏츠")
+                
+            if btn_ig: 
+                url = f"https://www.instagram.com/explore/search/keyword/?q={quote(short_query)}" if short_query else "https://www.instagram.com/reels/"
+                cloud_new_tab(url, "인스타그램 릴스")
+                
+            if btn_nv: 
+                url = f"https://search.naver.com/search.naver?query={quote(short_query)}&where=video" if short_query else "https://tv.naver.com/r"
+                cloud_new_tab(url, "네이버 클립")
 
         with col_ext2:
             st.markdown("<div class='glass-card'><h3>📥 2. 워터마크 제거 전용 다운로더</h3></div>", unsafe_allow_html=True)
-            if st.button("🚀 🇨🇳 도유인 전용 다운로더 (dlpanda)", use_container_width=True): webbrowser.open_new_tab("https://dlpanda.com/ko")
-            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-            if st.button("🚀 🎵 틱톡 전용 다운로더 (snaptik)", use_container_width=True): webbrowser.open_new_tab("https://snaptik.app/ko")
+            # 🚨 [신규] 클라우드 환경 호환을 위한 HTML <a> 태그 버튼 적용
+            st.markdown("""
+            <a href="https://dlpanda.com/ko" target="_blank" style="background: #18181b; color: #fafafa; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.7rem 0.4rem; font-weight: 500; font-size: 0.9rem; text-align: center; text-decoration: none; display: block; width: 100%; transition: all 0.2s ease; margin-bottom: 12px;">
+                🚀 🇨🇳 도유인 전용 다운로더 (dlpanda)
+            </a>
+            <a href="https://snaptik.app/ko" target="_blank" style="background: #18181b; color: #fafafa; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.7rem 0.4rem; font-weight: 500; font-size: 0.9rem; text-align: center; text-decoration: none; display: block; width: 100%; transition: all 0.2s ease;">
+                🚀 🎵 틱톡 전용 다운로더 (snaptik)
+            </a>
+            <style>
+                a:hover { background: #27272a !important; border-color: rgba(255,255,255,0.2) !important; }
+            </style>
+            """, unsafe_allow_html=True)
