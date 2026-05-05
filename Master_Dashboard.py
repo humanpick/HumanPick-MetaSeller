@@ -271,45 +271,53 @@ def get_member_worksheet():
 
         try:
             worksheet = spreadsheet.worksheet("회원관리")
+            # 🚨 [신규] 기존 시트에도 '등급' 헤더가 없으면 자동 추가 (하위 호환성)
+            headers = worksheet.row_values(1)
+            if "등급" not in headers:
+                worksheet.update_cell(1, len(headers) + 1, "등급")
         except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=6)
-            worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일"])
+            worksheet = spreadsheet.add_worksheet(title="회원관리", rows=100, cols=7)
+            worksheet.append_row(["아이디", "비밀번호", "이름", "상태", "만료일자", "최근접속일", "등급"])
         return worksheet
     except Exception as e:
         return None
 
-# 🚨 DB 연동 다중 로그인 검증 함수
+# 🚨 DB 연동 다중 로그인 및 등급 검증 함수
 def authenticate_user(uid, upw):
+    # 어드민 마스터 계정은 최상위 VIP로 강제 인식
     if uid == "admin" and upw == "1234":
-        return True, "마스터", "관리자", ""
+        return True, "마스터", "관리자", "VIP회원", ""
 
     ws = get_member_worksheet()
     if ws is None:
-        return False, None, None, "🚨 구글 시트(DB) 연결 실패. 서버 환경을 확인하세요."
+        return False, None, None, None, "🚨 구글 시트(DB) 연결 실패. 서버 환경을 확인하세요."
 
     records = ws.get_all_records()
     df = pd.DataFrame(records)
 
     if df.empty or '아이디' not in df.columns:
-        return False, None, None, "등록된 회원 정보가 없습니다."
+        return False, None, None, None, "등록된 회원 정보가 없습니다."
 
     user_match = df[(df['아이디'].astype(str) == str(uid)) & (df['비밀번호'].astype(str) == str(upw))]
 
     if user_match.empty:
-        return False, None, None, "아이디 또는 비밀번호가 일치하지 않습니다."
+        return False, None, None, None, "아이디 또는 비밀번호가 일치하지 않습니다."
 
     user_info = user_match.iloc[0]
     status = user_info.get('상태', '')
     user_name = user_info.get('이름', '회원')
+    user_level = user_info.get('등급', '무료회원')
+    
+    if not user_level: user_level = "무료회원" # 빈칸 예외 처리
 
     if status == "승인대기":
-        return False, None, None, "⏳ 관리자 승인 대기 중입니다. 승인 후 이용 가능합니다."
+        return False, None, None, None, "⏳ 관리자 승인 대기 중입니다. 승인 후 이용 가능합니다."
     elif status in ["기간만료", "영구정지"]:
-        return False, None, None, f"🚫 접속이 제한된 계정입니다. (상태: {status})"
+        return False, None, None, None, f"🚫 접속이 제한된 계정입니다. (상태: {status})"
     elif status == "이용중":
-        return True, user_name, "일반회원", ""
+        return True, user_name, "일반회원", user_level, ""
     else:
-        return False, None, None, "알 수 없는 계정 상태입니다."
+        return False, None, None, None, "알 수 없는 계정 상태입니다."
 
 def parse_korean_currency(val_str):
     try:
@@ -447,6 +455,7 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'mode' not in st.session_state: st.session_state.mode = "💻 작업 모드 (PC 분석)"
 if 'user_name' not in st.session_state: st.session_state.user_name = ""
 if 'user_role' not in st.session_state: st.session_state.user_role = ""
+if 'user_level' not in st.session_state: st.session_state.user_level = ""
 
 if not st.session_state.logged_in:
     st.markdown("<div style='height: 10vh;'></div>", unsafe_allow_html=True)
@@ -468,12 +477,13 @@ if not st.session_state.logged_in:
                 upw = st.text_input("비밀번호", type="password", placeholder="••••")
                 st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
                 if st.form_submit_button("시스템 로그인 →"):
-                    is_auth, u_name, u_role, err_msg = authenticate_user(uid, upw)
+                    is_auth, u_name, u_role, u_level, err_msg = authenticate_user(uid, upw)
                     if is_auth:
                         st.session_state.logged_in = True
                         st.session_state.user_name = u_name
                         st.session_state.user_role = u_role
-                        st.success(f"환영합니다, {u_name}님!")
+                        st.session_state.user_level = u_level
+                        st.success(f"환영합니다, {u_name}님! ({u_level})")
                         time.sleep(0.5)
                         rerun_app()
                     else: 
@@ -498,7 +508,8 @@ if not st.session_state.logged_in:
                                     st.error("이미 존재하는 아이디입니다.")
                                 else:
                                     today = datetime.now().strftime("%Y-%m-%d")
-                                    ws.append_row([new_uid, new_upw, new_name, "승인대기", "2026-12-31", today])
+                                    # 🚨 [신규] 기본 가입 시 '무료회원' 등급 자동 할당
+                                    ws.append_row([new_uid, new_upw, new_name, "승인대기", "2026-12-31", today, "무료회원"])
                                     st.success("✅ 가입 신청이 완료되었습니다! 관리자 승인 후 로그인 가능합니다.")
                             else:
                                 st.error("구글 시트(DB) 연결에 실패했습니다.")
@@ -510,7 +521,9 @@ if not st.session_state.logged_in:
 with st.sidebar:
     st.markdown("<p class='sidebar-title'>MetaSeller <span style='font-weight:400; font-size:0.9rem; color:#71717a;'>v5.0</span></p>", unsafe_allow_html=True)
     
-    st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role})</span></div>", unsafe_allow_html=True)
+    # 🚨 [신규] 등급에 따른 색상 차별화 및 상태창 업데이트
+    level_color = "#F59E0B" if "VIP" in st.session_state.user_level else ("#10B981" if "유료" in st.session_state.user_level else "#a1a1aa")
+    st.markdown(f"<div style='background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-top: 12px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);'><span style='font-size:0.85rem; color:#a1a1aa;'>접속자: </span><strong style='color:#38BDF8; font-size:0.95rem;'>{st.session_state.user_name}</strong> <span style='font-size:0.75rem; color:#71717a;'>({st.session_state.user_role} | <span style='color:{level_color}; font-weight:600;'>{st.session_state.user_level}</span>)</span></div>", unsafe_allow_html=True)
     
     mode_selection = st.radio("모드 선택", ["🚗 운전 모드 (음성 소싱)", "💻 작업 모드 (PC 분석)"], index=0 if "운전" in st.session_state.mode else 1)
     if mode_selection != st.session_state.mode:
@@ -567,6 +580,7 @@ with st.sidebar:
             st.session_state.logged_in = False
             st.session_state.user_name = ""
             st.session_state.user_role = ""
+            st.session_state.user_level = ""
             rerun_app()
 
 # ==========================================
@@ -684,43 +698,51 @@ elif "작업 모드" in st.session_state.mode:
                 st.info("아직 등록된 회원이 없습니다.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # 🚨 [신규] 기존 회원 권한 및 상태 수정 폼
+            # 🚨 [2] 기존 회원 권한 및 등급 수정 폼
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #F59E0B;'>회원 권한 및 상태 수정</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #F59E0B;'>회원 상태 및 등급 변경</h3>", unsafe_allow_html=True)
             
             if not df.empty:
                 user_ids = df['아이디'].astype(str).tolist()
                 with st.form("edit_member_status_form"):
-                    col1, col2 = st.columns(2)
+                    col1, col2, col3 = st.columns([1.5, 1, 1])
                     with col1:
-                        target_id = st.selectbox("상태를 변경할 아이디 선택", user_ids)
+                        target_id = st.selectbox("업데이트할 회원 아이디 선택", user_ids)
                     with col2:
                         new_status = st.selectbox("새로운 상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"], index=1)
+                    with col3:
+                        new_level = st.selectbox("회원 등급 지정", ["무료회원", "유료회원", "VIP회원"], index=0)
                         
-                    submit_edit = st.form_submit_button("상태 업데이트 적용 (Auto-Save)")
+                    submit_edit = st.form_submit_button("상태 및 등급 업데이트 (Auto-Save)")
                     
                     if submit_edit:
                         with st.spinner("DB 업데이트 중..."):
                             try:
-                                # 1번째 열(아이디)에서 해당 아이디의 행 번호를 찾아 4번째 열(상태)을 수정
                                 id_list = ws.col_values(1)
                                 if target_id in id_list:
                                     row_idx = id_list.index(target_id) + 1
-                                    ws.update_cell(row_idx, 4, new_status)
-                                    st.success(f"✅ [{target_id}] 님의 권한이 '{new_status}'(으)로 즉시 변경되었습니다!")
+                                    
+                                    headers = ws.row_values(1)
+                                    status_col = headers.index("상태") + 1 if "상태" in headers else 4
+                                    level_col = headers.index("등급") + 1 if "등급" in headers else 7
+                                    
+                                    ws.update_cell(row_idx, status_col, new_status)
+                                    ws.update_cell(row_idx, level_col, new_level)
+                                    
+                                    st.success(f"✅ [{target_id}] 님의 권한이 상태: '{new_status}' / 등급: '{new_level}'(으)로 즉시 변경되었습니다!")
                                     time.sleep(1)
                                     rerun_app()
                                 else:
                                     st.error("해당 아이디를 찾을 수 없습니다.")
                             except Exception as e:
-                                st.error(f"상태 업데이트 실패: {e}")
+                                st.error(f"업데이트 실패: {e}")
             else:
                 st.warning("먼저 회원을 등록해주세요.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # [3] 신규 회원 직접 발급 (기존 폼)
+            # [3] 신규 회원 강제/수동 발급 (초기 등급 포함)
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #EC4899;'>신규 회원 강제/수동 발급</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #EC4899;'>신규 회원 강제 발급</h3>", unsafe_allow_html=True)
 
             with st.form(key='add_member_form', clear_on_submit=True):
                 col1, col2 = st.columns(2)
@@ -729,7 +751,11 @@ elif "작업 모드" in st.session_state.mode:
                     new_pw = st.text_input("비밀번호 설정", type="password")
                 with col2:
                     new_name = st.text_input("이름 / 회사명")
-                    status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
+                    c_sub1, c_sub2 = st.columns(2)
+                    with c_sub1:
+                        status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
+                    with c_sub2:
+                        new_level = st.selectbox("초기 등급", ["무료회원", "유료회원", "VIP회원"], index=0)
                     
                 submit_add = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
                 
@@ -737,8 +763,16 @@ elif "작업 모드" in st.session_state.mode:
                     if new_id.strip() == "" or new_pw.strip() == "":
                         st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
                     else:
+                        headers = ws.row_values(1)
                         today = datetime.now().strftime("%Y-%m-%d")
-                        ws.append_row([new_id, new_pw, new_name, status, "2026-12-31", today])
+                        row_data = [new_id, new_pw, new_name, status, "2026-12-31", today]
+                        
+                        if "등급" in headers:
+                            row_data.append(new_level)
+                        else:
+                            row_data.append(new_level)
+                            
+                        ws.append_row(row_data)
                         st.success(f"[{new_name}] 님의 권한이 성공적으로 발급되어 시트에 자동 저장되었습니다!")
                         time.sleep(1) 
                         rerun_app() 
