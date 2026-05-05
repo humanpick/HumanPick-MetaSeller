@@ -141,17 +141,13 @@ def rerun_app():
     if hasattr(st, "rerun"): st.rerun()
     else: st.experimental_rerun()
 
-# 🚨 [디버깅 추가] 진짜 에러 메시지 추출
 def get_member_worksheet():
     try:
-        # Secrets 로드 시도
         if "gcp_service_account" in st.secrets:
             try:
                 creds_dict = dict(st.secrets["gcp_service_account"])
-                # private_key 내부의 이스케이프 문자 복원 (디버깅 핵심)
                 if "\\n" in creds_dict["private_key"]:
                     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-                
                 creds = ServiceAccountCredentials.from_json_keyfile_dict(
                     creds_dict, 
                     ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -169,13 +165,11 @@ def get_member_worksheet():
             except Exception as e:
                 return None, f"1. [JSON 파싱 에러] credentials.json 파일의 구조가 깨졌습니다.\n상세: {str(e)}"
 
-        # 구글 서버 접속 시도
         try:
             client = gspread.authorize(creds)
         except Exception as e:
-            return None, f"2. [인증 실패] 열쇠(Key)는 있지만 구글 서버가 접속을 거부했습니다. (API 미설정 또는 이메일 불일치)\n상세: {str(e)}"
+            return None, f"2. [인증 실패] 열쇠(Key)는 있지만 구글 서버가 접속을 거부했습니다.\n상세: {str(e)}"
 
-        # 시트 열기 시도
         try:
             sheet_id = "1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0"
             spreadsheet = client.open_by_key(sheet_id)
@@ -204,7 +198,7 @@ def authenticate_user(uid, upw):
 
     ws, error_msg = get_member_worksheet()
     if ws is None:
-        return False, None, None, None, error_msg # 디버깅 에러 메시지 그대로 출력
+        return False, None, None, None, error_msg 
 
     records = ws.get_all_records()
     df = pd.DataFrame(records)
@@ -448,7 +442,61 @@ with st.sidebar:
             rerun_app()
 
 # ==========================================
-# --- [5. 메인 화면: 💻 작업 모드] ---
+# --- [5. 메인 화면: 🚗 운전 모드] ---
+# ==========================================
+if "운전 모드" in st.session_state.mode:
+    st.markdown("<h1>🚗 운전 모드 (음성 소싱 에이전트)</h1>", unsafe_allow_html=True)
+    st.info("💡 모바일 키보드의 **[마이크 🎤] 버튼**을 눌러 상품을 말해주세요. AI가 판독하여 시트로 전송합니다.")
+    
+    with st.form("drive_mode_form"):
+        voice_input = st.text_area("🎙️ 상품 정보 입력창 (음성 입력 후 터치)", height=150, placeholder="예: 상업용 초음파 식기세척기 찾아줘. 중국가 1000위안 정도.")
+        uploaded_img = st.file_uploader("📸 현장 사진 업로드 (선택사항)", type=['png', 'jpg', 'jpeg'])
+        submit_voice = st.form_submit_button("🚀 즉시 분석 및 시트 저장")
+
+    if submit_voice:
+        if not st.session_state.api_key_input: 
+            st.error("좌측 사이드바에 API Key를 먼저 입력하고 저장해주세요.")
+        elif not voice_input and not uploaded_img: 
+            st.warning("분석할 텍스트나 사진을 입력해주세요.")
+        else:
+            with st.spinner("AI가 데이터를 추정하고 법무 스캔을 진행 중입니다..."):
+                prompt = "당신은 B2B 구매대행 전문가입니다. 운전 중인 대표님을 위해 즉시 판단하세요.\n"
+                prompt += "1. 단가와 무게를 추정하고 전안법, 전파법 등 통관 여부를 검토.\n"
+                prompt += "2. 아래 JSON 양식으로만 답변. 마진 금액은 반드시 콤마(,)를 찍어서 표기.\n\n"
+                prompt += f"입력 내용: {voice_input}\n\n"
+                prompt += "양식:\n"
+                prompt += '{\n  "Item": "추정된 정확한 상품명",\n  "Grade": "1등급(즉시소싱)",\n  "Profit": "예상 순수익 150,000원",\n  "Reason": "이유 2문장 이내 요약"\n}'
+                
+                res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
+                if res.startswith("❌") or res.startswith("⚠️"):
+                    st.error(res)
+                else:
+                    try:
+                        match = re.search(r'\{.*\}', res, re.DOTALL)
+                        if match:
+                            data = json.loads(match.group(0))
+                            grade_color = "#10B981" if "1" in data.get('Grade', '') or "2" in data.get('Grade', '') else "#F59E0B" if "3" in data.get('Grade', '') else "#EF4444"
+                            
+                            st.markdown(f"""
+                            <div class='glass-card' style='border-left: 4px solid {grade_color};'>
+                                <h3 style='color:{grade_color}; margin-top:0;'>{data.get('Grade', '')}</h3>
+                                <h2 style='margin-bottom:12px; color:#fafafa; border:none; padding:0;'>{data.get('Item', '')}</h2>
+                                <p style='font-size: 1.1rem; color:#fafafa;'><strong>💰 {data.get('Profit', '')}</strong></p>
+                                <p style='color:#a1a1aa; line-height:1.6; margin-top:8px;'><strong>판독 리포트:</strong> {data.get('Reason', '')}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            is_saved, err_msg = save_to_google_sheet(data.get('Item', ''), data.get('Grade', ''), data.get('Reason', ''), voice_input)
+                            if is_saved: 
+                                st.cache_data.clear() 
+                                st.success("✅ 공유된 [구글 시트]에 투두 리스트가 추가되었습니다!")
+                            else: 
+                                st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
+                        else: st.error(f"데이터 파싱 실패. 원본 응답:\n{res}")
+                    except Exception as e: st.error(f"오류 발생: {e}\n\n원본 응답:\n{res}")
+
+# ==========================================
+# --- [6. 메인 화면: 💻 작업 모드] ---
 # ==========================================
 elif "작업 모드" in st.session_state.mode:
     
