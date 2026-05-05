@@ -330,10 +330,9 @@ def generate_content_auto(prompt, api_key, selected_model="자동 (권장)"):
         return f"⚠️ 서버 응답 거부 또는 실패\n\n[구글 원본 에러 메시지]\n{last_error}"
     except Exception as e: return f"❌ 통신 시스템 오류: {e}"
 
-# 🚨 [수정] __file__ 로 인한 경로 에러 해결
 @st.cache_data
 def extract_copywriting_materials():
-    base_dir = os.getcwd()  # 서버 환경 호환을 위해 절대 경로 대신 현재 폴더 기준으로 변경
+    base_dir = os.getcwd() 
     target_dir = os.path.join(base_dir, "HQ_Engine", "카피라이팅자료")
     os.makedirs(target_dir, exist_ok=True)
     extracted_text, file_list = "", []
@@ -647,13 +646,15 @@ elif "작업 모드" in st.session_state.mode:
                     res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
                     if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
                     else:
+                        # 🚨 [신규] 강력하고 유연한 파싱 엔진 (AI 환각 대응)
                         trans, s1, s2, s3 = "", "", "", ""
-                        for line in res.replace('**', '').split('\n'):
+                        clean_res = res.replace('**', '').replace('- ', '').replace('* ', '')
+                        for line in clean_res.split('\n'):
                             line = line.strip()
-                            if line.startswith('[TRANSLATION]'): trans = line.replace('[TRANSLATION]', '').strip()
-                            elif line.startswith('[STRATEGY_1]'): s1 = line.replace('[STRATEGY_1]', '').strip()
-                            elif line.startswith('[STRATEGY_2]'): s2 = line.replace('[STRATEGY_2]', '').strip()
-                            elif line.startswith('[STRATEGY_3]'): s3 = line.replace('[STRATEGY_3]', '').strip()
+                            if '[TRANSLATION]' in line: trans = line.split('[TRANSLATION]')[-1].strip(' :>-')
+                            elif '[STRATEGY_1]' in line: s1 = line.split('[STRATEGY_1]')[-1].strip(' :>-')
+                            elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
+                            elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
 
                         st.success(f"✅ 연성 완료! (중국어 기본 번역: **{trans}**)")
                         strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
@@ -830,7 +831,6 @@ elif "작업 모드" in st.session_state.mode:
         net_margin = selling_price - (cost_price + fulfillment_fee + commission_cost)
         target_roas = 0 if net_margin <= 0 else round((selling_price / net_margin) * 100, 2)
         
-        # 🚨 [수정] 조건문을 분리하여 f-string 오류 해결
         margin_color = "#10B981" if net_margin > 0 else "#EF4444"
         
         st.markdown(f"""
