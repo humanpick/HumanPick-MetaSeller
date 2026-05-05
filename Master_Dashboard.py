@@ -99,13 +99,11 @@ st.markdown("""
     .highlight-value { font-size: 2.5rem; font-weight: 700; color: #fafafa; letter-spacing: -0.02em; }
     
     [data-testid="stAlert"] { background-color: transparent !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 8px !important; }
-    [data-testid="stAlert"] p { color: #fafafa !important; }
     [data-testid="stDataFrame"] { background-color: transparent !important; }
     [data-testid="stForm"] { border: none !important; padding: 0; background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
-# 🚨 [모바일 작동 버그 수정 완료 구역] 🚨
 import streamlit.components.v1 as components
 components.html("""
 <script>
@@ -122,17 +120,15 @@ components.html("""
         
         btn.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            // [Fix 1] 최신 버전 Streamlit DOM 변화 대응 (다중 셀렉터로 절대 놓치지 않음)
             const sidebarBtn = doc.querySelector('[data-testid="collapsedControl"]') || 
                                doc.querySelector('[data-testid="stSidebarCollapsedControl"]') || 
                                doc.querySelector('header[data-testid="stHeader"] button') ||
                                doc.querySelector('button[kind="header"]');
             
             if (sidebarBtn) { 
-                // [Fix 2] 모바일에서 React 이벤트 핸들러를 확실하게 깨우기 위해 MouseEvent 강제 생성 후 Dispatch
                 const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: doc.defaultView });
                 sidebarBtn.dispatchEvent(clickEvent);
-                sidebarBtn.click(); // 안전망 확보를 위한 이중 클릭
+                sidebarBtn.click(); 
             } 
         });
         doc.body.appendChild(btn);
@@ -145,7 +141,6 @@ components.html("""
             if (!label.classList.contains('auto-close-bound')) {
                 label.classList.add('auto-close-bound');
                 label.addEventListener('click', () => { 
-                    // [Fix 3] 자동 닫기 버튼에도 다중 셀렉터 및 강제 이벤트 트리거 동일 적용
                     const closeBtn = doc.querySelector('[data-testid="stSidebarCollapseButton"]') || 
                                      doc.querySelector('[data-testid="stSidebar"] button');
                     if (closeBtn) {
@@ -568,10 +563,16 @@ if "운전 모드" in st.session_state.mode:
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            is_saved, err_msg = save_to_google_sheet(data.get('Item', ''), data.get('Grade', ''), data.get('Reason', ''), voice_input)
+                            is_saved, err_msg = save_to_google_sheet(
+                                data.get('Item', ''), 
+                                data.get('Grade', ''), 
+                                data.get('Reason', ''), 
+                                voice_input,
+                                target_sheet="모바일 소싱DB"
+                            )
                             if is_saved: 
                                 st.cache_data.clear() 
-                                st.success("✅ 공유된 [구글 시트]에 투두 리스트가 추가되었습니다!")
+                                st.success("✅ 공유된 [구글 시트]의 '모바일 소싱DB' 시트에 내용이 추가되었습니다!")
                             else: 
                                 st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
                         else: st.error(f"데이터 파싱 실패. 원본 응답:\n{res}")
