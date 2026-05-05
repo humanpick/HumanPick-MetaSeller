@@ -800,8 +800,21 @@ elif "작업 모드" in st.session_state.mode:
         commission_cost = int(selling_price * (commission_rate / 100))
         net_margin = selling_price - (cost_price + fulfillment_fee + commission_cost)
         target_roas = 0 if net_margin <= 0 else round((selling_price / net_margin) * 100, 2)
+        margin_color = "#10B981" if net_margin > 0 else "#EF4444" 
         
-        st.markdown(f"<div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'><div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>예상 마진</span><br><strong style='color:{\"#10B981\" if net_margin>0 else \"#EF4444\"}; font-size:1.5rem;'>{net_margin:,} 원</strong></div><div style='text-align:center;'><span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>BEP ROAS (본전 마지노선)</span><br><strong style='color:#FBBF24; font-size:1.5rem;'>{target_roas:,} %</strong></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'>
+            <div style='text-align:center;'>
+                <span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>예상 마진</span><br>
+                <strong style='color:{margin_color}; font-size:1.5rem;'>{net_margin:,} 원</strong>
+            </div>
+            <div style='text-align:center;'>
+                <span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>BEP ROAS (본전 마지노선)</span><br>
+                <strong style='color:#FBBF24; font-size:1.5rem;'>{target_roas:,} %</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         uploaded_file = st.file_uploader("쿠팡 '검색어 리포트' 엑셀/CSV 업로드", type=["csv", "xlsx"])
 
         if uploaded_file is not None:
