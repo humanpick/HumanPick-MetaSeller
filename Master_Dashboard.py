@@ -245,9 +245,8 @@ def get_member_worksheet():
     except Exception as e:
         return None, f"5. [치명적 시스템 에러] {str(e)}"
 
-# 🚨 [관리자 비밀번호 설정 구역] 🚨
 def authenticate_user(uid, upw):
-    # 'admin' 계정의 비밀번호 '1234'를 원하는 비밀번호로 변경하세요.
+    # 🚨 관리자 아이디와 비밀번호 (여기를 원하는 비번으로 수정하세요!)
     if uid == "admin" and upw == "1234":
         return True, "마스터", "관리자", "VIP회원", ""
 
@@ -598,32 +597,487 @@ if "운전 모드" in st.session_state.mode:
                             else: st.error(f"⚠️ 저장 실패: {err_msg}")
                     except Exception as e: st.error(f"오류: {e}")
 
-# (이하 기존 작업 모드 및 상세 모듈 코드 동일... 생략하지 않고 풀코드 유지 원칙 준수)
+# ==========================================
+# --- [6. 메인 화면: 💻 작업 모드] ---
+# ==========================================
 elif "작업 모드" in st.session_state.mode:
+    
     if menu == "🚀 시스템 홈 (대시보드)":
         st.markdown("<h1>시스템 홈 (대시보드)</h1>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1: st.markdown("<div class='glass-card'><h3>업로드 대기</h3><p style='font-size:2rem; font-weight:700; color:#fafafa;'>12</p></div>", unsafe_allow_html=True)
         with col2: st.markdown("<div class='glass-card'><h3>소싱 성공률</h3><p style='font-size:2rem; font-weight:700; color:#fafafa;'>84.5%</p></div>", unsafe_allow_html=True)
         with col3: st.markdown("<div class='glass-card'><h3>API 상태</h3><p style='font-size:1.5rem; font-weight:600; color:#10b981; margin-top:8px;'>정상 연결됨</p></div>", unsafe_allow_html=True)
-        st.info("👈 좌측 메뉴에서 분석 모듈을 선택하세요.")
+        st.info("👈 좌측 메뉴에서 원하시는 분석 모듈을 선택하여 작업을 시작하세요.")
+
     elif menu == "🗂️ 소싱 DB 관리":
         st.markdown("<h1>소싱 DB 관리</h1>", unsafe_allow_html=True)
-        if st.button("🔄 새로고침"): st.cache_data.clear(); rerun_app()
-        df_db, db_status = fetch_sourcing_db()
+        
+        col_db1, col_db2 = st.columns([4, 1])
+        with col_db1: st.info("💡 각 모듈에서 저장한 데이터를 실시간으로 확인하고 관리합니다.")
+        with col_db2:
+            if st.button("🔄 새로고침", use_container_width=True):
+                st.cache_data.clear() 
+                rerun_app()
+
+        with st.spinner("소싱 DB 데이터를 불러오는 중입니다..."): df_db, db_status = fetch_sourcing_db()
+        st.markdown(f"<p style='color:#a1a1aa; font-size:0.85rem; margin-bottom:12px;'>상태: {db_status}</p>", unsafe_allow_html=True)
+        
         if not df_db.empty: st.dataframe(df_db, use_container_width=True, height=450)
-        else: st.warning("데이터가 없습니다.")
+        else: st.warning("아직 저장된 소싱 데이터가 없습니다.")
+
+        st.markdown("""<div style="margin-top: 16px;"><a href="https://docs.google.com/spreadsheets/d/1p2pgXtUN5ql_FcflX0WacybNPPnrq33rg1YarfsMEA0/edit?usp=sharing" target="_blank" style="display:block; text-align:center; background: #fafafa; color:#09090b; padding:12px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; transition: 0.2s;">📝 구글 시트 원본 열람 및 직접 수정하기</a></div>""", unsafe_allow_html=True)
+
     elif menu == "👥 회원 관리 (어드민)":
         st.markdown("<h1>💎 MetaSeller 회원 관리 시스템</h1>", unsafe_allow_html=True)
-        ws, err = get_member_worksheet()
-        if ws:
-            df = pd.DataFrame(ws.get_all_records())
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            with st.form("edit_status"):
-                u_id = st.selectbox("회원 선택", df['아이디'].tolist())
-                n_st = st.selectbox("상태", ["이용중", "승인대기", "기간만료"])
-                n_lv = st.selectbox("등급", ["무료회원", "유료회원", "VIP회원"])
-                if st.form_submit_button("업데이트"):
-                    idx = ws.col_values(1).index(u_id) + 1
-                    ws.update_cell(idx, 4, n_st); ws.update_cell(idx, 7, n_lv)
-                    st.success("변경 완료!"); time.sleep(1); rerun_app()
+        ws, error_msg = get_member_worksheet()
+        
+        if ws is None: st.error(f"🚨 구글 시트 연결 에러 상세:\n\n{error_msg}")
+        else:
+            data = ws.get_all_records()
+            df = pd.DataFrame(data)
+
+            st.markdown("<div class='glass-card'><h3 style='color: #38BDF8;'>현재 등록된 회원 목록</h3>", unsafe_allow_html=True)
+            if not df.empty: st.dataframe(df, use_container_width=True, hide_index=True)
+            else: st.info("아직 등록된 회원이 없습니다.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='glass-card'><h3 style='color: #F59E0B;'>회원 상태 및 등급 변경</h3>", unsafe_allow_html=True)
+            if not df.empty:
+                user_ids = df['아이디'].astype(str).tolist()
+                with st.form("edit_member_status_form"):
+                    col1, col2, col3 = st.columns([1.5, 1, 1])
+                    with col1: target_id = st.selectbox("업데이트할 회원 아이디 선택", user_ids)
+                    with col2: new_status = st.selectbox("새로운 상태 지정", ["승인대기", "이용중", "기간만료", "영구정지"], index=1)
+                    with col3: new_level = st.selectbox("회원 등급 지정", ["무료회원", "유료회원", "VIP회원"], index=0)
+                        
+                    submit_edit = st.form_submit_button("상태 및 등급 업데이트 (Auto-Save)")
+                    
+                    if submit_edit:
+                        with st.spinner("DB 업데이트 중..."):
+                            try:
+                                id_list = ws.col_values(1)
+                                if target_id in id_list:
+                                    row_idx = id_list.index(target_id) + 1
+                                    headers = ws.row_values(1)
+                                    status_col = headers.index("상태") + 1 if "상태" in headers else 4
+                                    level_col = headers.index("등급") + 1 if "등급" in headers else 7
+                                    ws.update_cell(row_idx, status_col, new_status)
+                                    ws.update_cell(row_idx, level_col, new_level)
+                                    st.success(f"✅ [{target_id}] 님의 권한이 상태: '{new_status}' / 등급: '{new_level}'(으)로 즉시 변경되었습니다!")
+                                    time.sleep(1)
+                                    rerun_app()
+                                else: st.error("해당 아이디를 찾을 수 없습니다.")
+                            except Exception as e: st.error(f"업데이트 실패: {e}")
+            else: st.warning("먼저 회원을 등록해주세요.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='glass-card'><h3 style='color: #EC4899;'>신규 회원 강제 발급</h3>", unsafe_allow_html=True)
+            with st.form(key='add_member_form', clear_on_submit=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    new_id = st.text_input("아이디 (이메일)")
+                    new_pw = st.text_input("비밀번호 설정", type="password")
+                with col2:
+                    new_name = st.text_input("이름 / 회사명")
+                    c_sub1, c_sub2 = st.columns(2)
+                    with c_sub1: status = st.selectbox("상태 지정", ["이용중", "승인대기", "기간만료", "영구정지"], index=0)
+                    with c_sub2: new_level = st.selectbox("초기 등급", ["무료회원", "유료회원", "VIP회원"], index=0)
+                    
+                submit_add = st.form_submit_button("회원 DB에 즉시 등록 (Auto-Save)")
+                if submit_add:
+                    if new_id.strip() == "" or new_pw.strip() == "": st.warning("아이디와 비밀번호는 반드시 입력해야 합니다.")
+                    else:
+                        headers = ws.row_values(1)
+                        today = datetime.now().strftime("%Y-%m-%d")
+                        row_data = [new_id, new_pw, new_name, status, "2026-12-31", today]
+                        if "등급" in headers: row_data.append(new_level)
+                        else: row_data.append(new_level)
+                        
+                        if ws.col_count > len(row_data):
+                            row_data.extend([""] * (ws.col_count - len(row_data)))
+                            
+                        ws.append_row(row_data)
+                        st.success(f"[{new_name}] 님의 권한이 성공적으로 발급되어 시트에 자동 저장되었습니다!")
+                        time.sleep(1) 
+                        rerun_app() 
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    elif menu == "🧪 키워드 분석 (트렌드 발굴)":
+        st.markdown("<h1>트렌드 키워드 분석 & 번역</h1>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2, gap="medium")
+        with col1:
+            st.markdown("""<div class='glass-card'><h3>📊 1. 네이버 데이터랩 검색</h3><p>쇼핑인사이트에서 현재 뜨고 있는 키워드를 발굴하세요.</p><a href="https://datalab.naver.com/shoppingInsight/sCategory.naver" target="_blank" style="display:block; text-align:center; background: transparent; border: 1px solid #10b981; color:#10b981; padding:10px; border-radius:8px; font-weight:600; text-decoration:none; font-size:0.95rem; margin-top:16px;">📈 네이버 데이터랩 열기</a></div>""", unsafe_allow_html=True)
+            
+        with col2:
+            st.markdown("<div class='glass-card' style='padding-bottom:12px;'><h3>🇨🇳 2. 황금 키워드 번역기 (자동 저장)</h3><p>한국어 상품명을 입력하면 전략 키워드로 변환 후 DB에 자동 저장됩니다.</p></div>", unsafe_allow_html=True)
+            with st.form("form_kw", clear_on_submit=False):
+                keyword_input_val = st.text_input("한국어 상품명 입력:", placeholder="예: 여름 원피스", label_visibility="collapsed")
+                btn_translate = st.form_submit_button("✨ 황금 키워드 연성 및 DB 자동 저장", use_container_width=True)
+
+        if btn_translate:
+            if not st.session_state.api_key_input: st.error("사이드바에 API 키를 저장해 주세요.")
+            elif not keyword_input_val: st.warning("번역할 한국어 상품명을 입력해 주세요.")
+            else:
+                with st.spinner("맞춤형 황금 키워드를 연성 및 자동 저장 중..."):
+                    prompt = f"당신은 중국 타오바오(Taobao) 소싱 전문가입니다. 한국어 상품명 '{keyword_input_val}'을 타오바오 검색용으로 번역하세요.\n"
+                    prompt += "3가지 소싱 전략에 맞춰 '타오바오에 복사해서 즉시 검색할 수 있는 순수 중국어 간체자 키워드'만 생성하세요.\n"
+                    prompt += "★경고: 영어, 한국어, 병음(Pinyin), 괄호, 부연 설명은 절대 출력하지 마세요! 오직 중국어 한자만 출력하세요. (단, ins, usb 같은 상품에 필수적인 영문 부품명은 허용)\n"
+                    prompt += "형식:\n[TRANSLATION]기본중국어키워드\n[STRATEGY_1]전략1중국어키워드\n[STRATEGY_2]전략2중국어키워드\n[STRATEGY_3]전략3중국어키워드"
+                    
+                    res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
+                    if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
+                    else:
+                        trans, s1, s2, s3 = "", "", "", ""
+                        clean_res = res.replace('**', '').replace('- ', '').replace('* ', '')
+                        for line in clean_res.split('\n'):
+                            line = line.strip()
+                            if '[TRANSLATION]' in line: trans = line.split('[TRANSLATION]')[-1].strip(' :>-')
+                            elif '[STRATEGY_1]' in line: s1 = line.split('[STRATEGY_1]')[-1].strip(' :>-')
+                            elif '[STRATEGY_2]' in line: s2 = line.split('[STRATEGY_2]')[-1].strip(' :>-')
+                            elif '[STRATEGY_3]' in line: s3 = line.split('[STRATEGY_3]')[-1].strip(' :>-')
+
+                        def clean_cn_keyword(text):
+                            cleaned = re.sub(r'\(.*?\)|\[.*?\]|[가-힣]|[:：/,\-]', '', text).strip()
+                            return ' '.join(cleaned.split()) if cleaned else text
+
+                        pure_trans = clean_cn_keyword(trans)
+                        st.success(f"✅ 연성 완료! (중국어 기본 번역: **{pure_trans}**)")
+                        strategies = [("🎨 디자인/감성", s1), ("⚙️ 실용성/스펙", s2), ("🏭 공장/가성비", s3)]
+                        
+                        kw_cols = st.columns(3)
+                        save_success_count = 0
+                        for i, (name, search_query) in enumerate(strategies):
+                            if not search_query: continue
+                            
+                            pure_keyword = clean_cn_keyword(search_query)
+                            link = f"https://s.taobao.com/search?q={quote(pure_keyword)}"
+                            
+                            with kw_cols[i]:
+                                st.markdown(f"<div class='glass-card' style='text-align:center;'><span style='color:#a1a1aa; font-weight:600; font-size:0.85rem; display:block; margin-bottom:8px;'>{name} 전략</span><span style='font-size:1.1rem; color:#fafafa; font-weight:700; display:block; margin-bottom:16px;'>{pure_keyword}</span><a href='{link}' target='_blank' style='text-decoration:none; background: #18181b; border: 1px solid rgba(255,255,255,0.1); color:#fafafa; padding:8px 12px; border-radius:6px; font-weight:500; font-size:0.9rem; display:block; transition: 0.2s;'>🔍 타오바오 검색</a></div>", unsafe_allow_html=True)
+                                
+                            is_saved, err_msg = save_to_google_sheet(
+                                f"키워드: {keyword_input_val} ({name})", 
+                                "키워드분석", 
+                                f"기본 번역: {pure_trans}", 
+                                f'=HYPERLINK("{link}", "🔗 {name.split("/")[0].split(" ")[-1]} 타오바오 검색")'
+                            )
+                            if is_saved: save_success_count += 1
+                        
+                        if save_success_count > 0: 
+                            st.cache_data.clear()
+                            st.info(f"💾 소싱 DB에 {save_success_count}개의 전략 키워드가 개별 분리되어 성공적으로 저장되었습니다!")
+                        else: st.error("⚠️ 구글 시트 자동 저장 실패")
+
+    elif menu == "🛑 지재권 리스크 스캐너":
+        st.markdown("<h1>지재권 리스크 스캐너</h1>", unsafe_allow_html=True)
+        col_a, col_b = st.columns(2, gap="medium")
+        with col_a:
+            st.markdown("<div class='glass-card'><h3>🚨 로컬 DB 금칙어 스캔</h3><p>폴더 내 엑셀/CSV 데이터를 바탕으로 금칙어를 1초 만에 걸러냅니다.</p></div>", unsafe_allow_html=True)
+            with st.form("form_db_scan", clear_on_submit=False):
+                keyword_input_local = st.text_input("상품명 검사 (DB 전용):", placeholder="예: 쓰리잘비", label_visibility="collapsed")
+                btn_local = st.form_submit_button("🚨 위험 단어 스캔 시작", use_container_width=True)
+            
+            if btn_local:
+                current_dir = os.getcwd()
+                db_files = [f for f in os.listdir(current_dir) if f.lower().endswith(('.csv', '.xlsx', '.xls')) and not f.startswith("~$")]
+                if not db_files: st.error("❌ 현재 폴더에 엑셀/CSV DB 파일이 없습니다.")
+                elif keyword_input_local:
+                    db_source = db_files[0]
+                    file_path = os.path.join(current_dir, db_source)
+                    try:
+                        if str(db_source).endswith(('.xlsx', '.xls')): df = pd.read_excel(file_path)
+                        else:
+                            try: df = pd.read_csv(file_path, encoding='utf-8-sig', on_bad_lines='skip')
+                            except:
+                                try: df = pd.read_csv(file_path, encoding='cp949', on_bad_lines='skip')
+                                except: df = pd.read_csv(file_path, encoding='euc-kr', on_bad_lines='skip')
+                        
+                        found = []
+                        for col in df.columns:
+                            for val in df[col]:
+                                str_val = str(val).strip()
+                                if str_val and str_val.lower() != 'nan' and len(str_val) >= 2:
+                                    if keyword_input_local.lower().replace(" ","") in str_val.lower().replace(" ",""):
+                                        found.append(str_val)
+
+                        if found: st.error(f"🚨 [적발] DB 금칙어 발견: {', '.join(list(set(found)))}")
+                        else: st.success(f"✅ '{keyword_input_local}' (은)는 안전합니다.")
+                    except Exception as e: st.error(f"파일 오류: {e}")
+                else: st.warning("검사할 단어를 입력하세요.")
+
+        with col_b:
+            st.markdown("<div class='glass-card'><h3>🛡️ AI 법무팀 정밀 진단 (자동 저장)</h3><p>지재권, 인증(KC), 수입금지 여부를 심층 진단 후 DB에 저장합니다.</p></div>", unsafe_allow_html=True)
+            with st.form("form_ai_scan", clear_on_submit=False):
+                keyword_input_ai = st.text_area("상품 텍스트 또는 상세 설명 입력:", placeholder="예: 220v 중국산 상업용 제빙기", height=70, label_visibility="collapsed")
+                btn_ai = st.form_submit_button("🛡️ AI 심층 진단 및 DB 자동 저장", use_container_width=True)
+            
+            if btn_ai:
+                if not st.session_state.api_key_input: st.warning("API 키를 저장하세요.")
+                elif not keyword_input_ai: st.warning("상품 정보를 입력하세요.")
+                else:
+                    with st.spinner("AI 관세사 분석 및 자동 저장 중..."):
+                        prompt = "이커머스 전문 관세사/변호사로서 통관 리스크 및 법적 리스크를 진단하세요.\n결과는 반드시 JSON 형식으로만 출력하세요.\n"
+                        prompt += '{\n  "Level": "안전", \n  "IP_Risk": "결과(1문장)",\n  "Cert_Risk": "결과(1문장)",\n  "Ban_Risk": "결과(1문장)",\n  "Final_Action": "최종 판결(1문장)"\n}\n'
+                        prompt += f"[데이터]: {keyword_input_ai}"
+                        res = generate_content_auto(prompt, st.session_state.api_key_input, selected_model)
+                        if res.startswith("❌") or res.startswith("⚠️"): st.error(res)
+                        else:
+                            try:
+                                match = re.search(r'\{.*\}', res, re.DOTALL)
+                                if match:
+                                    data = json.loads(match.group(0))
+                                    level = data.get("Level", "위험")
+                                    border_color, text_color = ("#10B981", "#10B981") if level == "안전" else (("#F59E0B", "#F59E0B") if level == "주의" else ("#EF4444", "#EF4444"))
+                                    st.markdown(f"<div class='glass-card' style='border-left: 4px solid {border_color};'><h3 style='color:{text_color}; margin-top:0; margin-bottom:12px;'>🚨 최종 등급: {level}</h3><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>⚖️ 지재권:</span> {data.get('IP_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:6px; color:#a1a1aa;'><span style='color:#fafafa;'>📑 인증/규제:</span> {data.get('Cert_Risk', '')}</div><div style='font-size:0.9rem; margin-bottom:12px; color:#a1a1aa;'><span style='color:#fafafa;'>🚫 수입금지:</span> {data.get('Ban_Risk', '')}</div><div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; text-align:center;'><span style='color:{text_color}; font-weight:600; font-size:0.95rem;'>👨‍⚖️ {data.get('Final_Action', '')}</span></div></div>", unsafe_allow_html=True)
+                                    
+                                    clean_keyword_input_ai = keyword_input_ai.replace('\n', ' ').strip()
+                                    is_saved, err_msg = save_to_google_sheet(
+                                        clean_keyword_input_ai, 
+                                        f"법무진단: {level}", 
+                                        data.get('Final_Action', ''), 
+                                        f"지재권: {data.get('IP_Risk','')} | 인증: {data.get('Cert_Risk','')}",
+                                        target_sheet="지재권리스트"
+                                    )
+                                    if is_saved: 
+                                        st.cache_data.clear()
+                                        st.info("💾 진단 결과가 전용 소싱 DB [지재권리스트] 시트에 안전하게 분리 저장되었습니다!")
+                                    else: st.error(f"⚠️ 구글 시트 저장 실패: {err_msg}")
+                                else: st.error("파싱 실패.")
+                            except Exception as e: st.error(f"오류: {e}")
+
+    elif menu == "🏭 공장 판별기 (도매처 검증)":
+        st.markdown("<h1>타오바오 공장 판별기</h1>", unsafe_allow_html=True)
+        col1, col2 = st.columns([1.2, 1], gap="medium")
+        with col1:
+            st.markdown("<div class='glass-card'><h3>🏭 판매자 정보 입력</h3></div>", unsafe_allow_html=True)
+            p = st.selectbox("플랫폼:", ("타오바오 / 1688", "티몰 (Tmall)"), index=0)
+            l = st.selectbox("등급:", ("하트", "다이아몬드", "파란왕관", "황금왕관"), index=1)
+            y = st.number_input("업력 (년):", min_value=1, value=2)
+            i = st.selectbox("지표 (DSR 등):", ("빨간색 (우수)", "섞임 (보통)", "초록색 (위험)"), index=1)
+            g = st.checkbox("🏅 금메달 판매자")
+            
+        score = (20 if p=="티몰 (Tmall)" else 0) + {"하트":0, "다이아몬드":10, "파란왕관":25, "황금왕관":30}[l] + (25 if y>=6 else (15 if y>=3 else 0)) + {"빨간색 (우수)":30, "섞임 (보통)":10, "초록색 (위험)":-20}[i] + (15 if g else 0)
+        score = min(score, 100)
+        with col2:
+            res_t, t_c = ("✅ 즉시 소싱", "#10B981") if score>=80 else (("⚠️ 주의 필요", "#F59E0B") if score>=50 else ("❌ 소싱 금지", "#EF4444"))
+            st.markdown(f"<div class='glass-card' style='text-align:center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items:center; min-height:300px;'><p style='font-weight:600; margin-bottom:12px; color:#a1a1aa; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em;'>신뢰도 점수</p><h2 style='color:{t_c}; font-size:4.5rem; margin:0; font-weight:800; line-height:1; border:none;'>{score}<span style='font-size:1.5rem;'>점</span></h2><h3 style='color:{t_c}; margin-top:16px; font-size:1.5rem; font-weight:600;'>{res_t}</h3></div>", unsafe_allow_html=True)
+
+    elif menu == "💰 정밀 마진 계산기":
+        st.markdown("<h1>정밀 마진 계산기</h1>", unsafe_allow_html=True)
+        col_in, col_res = st.columns([1.2, 1], gap="large")
+        with col_in:
+            st.markdown("<div class='glass-card'><h3>📝 상품 및 물류 스펙</h3>", unsafe_allow_html=True)
+            item_name = st.text_input("소싱 상품명 (셀러픽 업로드용):", value="상업용 대용량 제빙기 50kg")
+            c_p1, c_p2 = st.columns(2)
+            with c_p1: 
+                cny_price = st.number_input("중국 원가 (¥)", value=50.0, step=1.0)
+                exchange_rate = st.number_input("현재 환율 (원)", value=195.0, step=1.0)
+            with c_p2: 
+                cny_shipping = st.number_input("중국 내 배송비 (¥)", value=0.0, step=1.0)
+                apply_tax = st.checkbox("🚨 관부가세 적용 ($150 초과)")
+            c_w1, c_w2, c_w3, c_w4 = st.columns(4)
+            with c_w1: weight = st.number_input("무게 (kg)", value=2.0, step=0.5)
+            with c_w2: width = st.number_input("가로 (cm)", value=30.0, step=1.0)
+            with c_w3: length = st.number_input("세로 (cm)", value=30.0, step=1.0)
+            with c_w4: height = st.number_input("높이 (cm)", value=30.0, step=1.0)
+            c_s1, c_s2 = st.columns(2)
+            with c_s1: sell_price = st.number_input("국내 판매가 (₩)", value=35000.0, step=1000.0)
+            with c_s2: market_fee_rate = st.number_input("마켓 수수료율 (%)", value=13.0, step=0.1)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        if weight <= 0.5: base_shipping = 4300
+        else: base_shipping = 4950 + math.ceil(max(0, weight - 1) * 2) * 600
+        max_side = max(width, length, height); sum_sides = width + length + height
+        is_kd = (weight >= 20) or (max_side >= 100) or (sum_sides >= 160)
+
+        domestic_fee = 0; delivery_type = "CJ대한통운"; delivery_color = "#38BDF8" 
+        if is_kd:
+            delivery_type = "경동화물(이관)"; delivery_color = "#F87171" 
+            vol_fee = 3000 + max(0, math.ceil(((width * length * height) - 20000)/10000) * 500)
+            weight_fee = 6000 if weight <= 20 else weight * 350
+            domestic_fee = math.ceil(max(vol_fee, weight_fee) * 1.22)
+        else:
+            if sum_sides > 120: domestic_fee = 4000
+            elif sum_sides > 100: domestic_fee = 2000
+
+        platform_fee = sell_price * (market_fee_rate / 100)
+        cost_krw = (cny_price + cny_shipping) * exchange_rate
+        tax = (cost_krw + base_shipping) * 0.18 if apply_tax else 0
+        total_cost = cost_krw + base_shipping + domestic_fee + platform_fee + tax
+        net_profit = sell_price - total_cost
+        margin_rate = (net_profit / sell_price) * 100 if sell_price > 0 else 0
+        profit_color = "#10B981" if net_profit > 0 else "#EF4444"
+
+        with col_res:
+            st.markdown(f"<div class='glass-card'><h3 style='margin-bottom:20px;'>📊 재무 분석 (예상 비용)</h3><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>배송사</span><strong style='color:{delivery_color};'>{delivery_type}</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>기본 해운비</span><strong style='color:#fafafa;'>{int(base_shipping):,} 원</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:12px;'><span style='color:#a1a1aa;'>국내 추가 배송비</span><strong style='color:#fafafa;'>{int(domestic_fee):,} 원</strong></div><div style='display:flex; justify-content:space-between; margin-bottom:16px;'><span style='color:#a1a1aa;'>관부가세</span><strong style='color:#fafafa;'>{int(tax):,} 원</strong></div><div style='display:flex; justify-content:space-between; font-size:1.1rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;'><span style='color:#fafafa;'>총 원가</span><strong style='color:#EF4444;'>{int(total_cost):,} 원</strong></div></div><div class='highlight-box'><div class='highlight-title'>예상 순수익</div><div class='highlight-value' style='color:{profit_color};'>{int(net_profit):,} 원</div><div style='color:#a1a1aa; font-size:1rem; margin-top:4px;'>(마진율: <span style='color:{profit_color}; font-weight:600;'>{margin_rate:.1f}%</span>)</div></div>", unsafe_allow_html=True)
+            
+            df = pd.DataFrame([{"상품명": item_name, "판매가": int(sell_price), "원가(위안)": int(cny_price), "원가(원)": int(total_cost - platform_fee), "재고수량": 999, "배송비": 0, "순수익": int(net_profit), "마진율(%)": round(margin_rate, 1)}])
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer: df.to_excel(writer, index=False)
+            
+            c_btn1, c_btn2 = st.columns(2)
+            with c_btn1: st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"SellerPick_{item_name[:5]}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with c_btn2:
+                if st.button("✅ 마진 분석 확정 및 DB 자동 저장", use_container_width=True, key="save_margin_db"):
+                    with st.spinner("구글 시트로 데이터 전송 중..."):
+                        is_saved, err_msg = save_to_google_sheet(item_name, "마진분석", f"마진율 {margin_rate:.1f}% ({int(net_profit):,}원)", f"원가 {int(total_cost):,}원")
+                        if is_saved: 
+                            st.cache_data.clear()
+                            st.success("✅ 확정된 마진율 데이터가 구글 시트에 저장되었습니다!")
+                        else: st.error(f"⚠️ 저장 실패: {err_msg}")
+
+    elif menu == "🎯 광고 해부학 (쿠팡 최적화)":
+        st.markdown("<h1>광고 해부학 (쿠팡 최적화)</h1>", unsafe_allow_html=True)
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        with col_m1: selling_price_str = st.text_input("판매가 (원)", value="25,000")
+        with col_m2: cost_price_str = st.text_input("원가+배송비 (원)", value="8,000")
+        with col_m3: fulfillment_fee_str = st.text_input("입출고 수수료 (원)", value="3,650")
+        with col_m4: commission_rate = st.number_input("판매 수수료 (%)", min_value=0.0, value=11.55, step=0.1) 
+
+        selling_price = parse_korean_currency(selling_price_str)
+        cost_price = parse_korean_currency(cost_price_str)
+        fulfillment_fee = parse_korean_currency(fulfillment_fee_str)
+        commission_cost = int(selling_price * (commission_rate / 100))
+        net_margin = selling_price - (cost_price + fulfillment_fee + commission_cost)
+        target_roas = 0 if net_margin <= 0 else round((selling_price / net_margin) * 100, 2)
+        
+        margin_color = "#10B981" if net_margin > 0 else "#EF4444"
+        
+        st.markdown(f"""
+        <div class='glass-card' style='display:flex; justify-content:space-around; padding:20px;'>
+            <div style='text-align:center;'>
+                <span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>예상 마진</span><br>
+                <strong style='color:{margin_color}; font-size:1.5rem;'>{net_margin:,} 원</strong>
+            </div>
+            <div style='text-align:center;'>
+                <span style='color:#a1a1aa; font-size:0.9rem; text-transform:uppercase;'>BEP ROAS (본전 마지노선)</span><br>
+                <strong style='color:#FBBF24; font-size:1.5rem;'>{target_roas:,} %</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        uploaded_file = st.file_uploader("쿠팡 '검색어 리포트' 엑셀/CSV 업로드", type=["csv", "xlsx"])
+
+        if uploaded_file is not None:
+            try:
+                with st.spinner("해부 중..."):
+                    if uploaded_file.name.endswith('.csv'): df = pd.read_csv(uploaded_file)
+                    else: df = pd.read_excel(uploaded_file)
+                cols = df.columns
+                kw_col = next((c for c in cols if '키워드' in c or '검색어' in c), None)
+                spend_col = next((c for c in cols if '광고비' in c or '비용' in c), None)
+                conv_col = next((c for c in cols if '전환수' in c or '주문수' in c), None)
+                sales_col = next((c for c in cols if '매출' in c or '전환액' in c), None)
+                click_col = next((c for c in cols if '클릭' in c), None)
+
+                if not all([kw_col, spend_col, conv_col, sales_col, click_col]): st.error("🚨 엑셀/CSV 형식이 올바르지 않습니다.")
+                else:
+                    for col in [spend_col, conv_col, sales_col, click_col]: df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+                    df['ROAS'] = (df[sales_col] / df[spend_col] * 100).fillna(0).round(2)
+                    tab1, tab2, tab3 = st.tabs(["🔥 출혈 키워드", "⭐ 효자 키워드", "🤖 AI 진단 리포트"])
+                    with tab1:
+                        bleed_df = df[(df[click_col] >= 10) & (df[conv_col] == 0) & (df[spend_col] > 0)].sort_values(by=spend_col, ascending=False)
+                        st.dataframe(bleed_df[[kw_col, click_col, spend_col, conv_col]], use_container_width=True, height=250)
+                    with tab2:
+                        good_df = df[(df['ROAS'] >= target_roas) & (df[conv_col] >= 2)].sort_values(by='ROAS', ascending=False)
+                        st.dataframe(good_df[[kw_col, spend_col, sales_col, 'ROAS', conv_col]], use_container_width=True, height=250)
+                    with tab3:
+                        if st.button("✨ 핵심 요약본 AI 분석", use_container_width=True):
+                            if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
+                            else:
+                                with st.spinner("광고 리포트를 분석 중..."):
+                                    top_keywords = df.nlargest(3, spend_col)[[kw_col, spend_col, 'ROAS']].to_dict('records')
+                                    st.success(generate_content_auto(f"쿠팡 광고 개선 플랜 3가지.\n목표 ROAS: {target_roas}%, 비용Top3: {top_keywords}", st.session_state.api_key_input, selected_model), icon="🎯")
+            except Exception as e: st.error(f"오류: {e}")
+
+    elif menu == "✍️ 카피라이팅 기획소":
+        st.markdown("<h1>실전 카피라이팅 기획소</h1>", unsafe_allow_html=True)
+        col_copy1, col_copy2 = st.columns(2, gap="medium")
+        with col_copy1:
+            st.markdown("<div class='glass-card'><h3>📚 1. 비법서 기반 카피 연성</h3></div>", unsafe_allow_html=True)
+            ref_text, file_list, folder_path = extract_copywriting_materials()
+            with st.form("form_copy_extract", clear_on_submit=False):
+                product_desc = st.text_area("✨ 상품 특징 입력:", placeholder="예: 직장인용 거북목 예방 메모리폼 베개", height=100, key="c1")
+                btn_extract = st.form_submit_button("🚀 매력적인 카피 추출", use_container_width=True)
+
+        with col_copy2:
+            st.markdown("<div class='glass-card'><h3>🕵️ 2. 경쟁사 마케팅 전략 해부</h3></div>", unsafe_allow_html=True)
+            with st.form("form_copy_strategy", clear_on_submit=False):
+                v_desc = st.text_area("🎥 상세페이지 문구:", height=45, key="c2")
+                c_data = st.text_area("💬 반응/댓글 데이터:", height=45, key="c3")
+                btn_strategy = st.form_submit_button("✨ 필승 소구점 도출", use_container_width=True)
+
+        if btn_extract:
+            if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
+            elif not product_desc: st.warning("상품의 특징을 입력해주세요.")
+            else:
+                with st.spinner("카피라이팅을 기획 중..."):
+                    st.success(generate_content_auto(f"자료 기반 카피 제안. 자료:{ref_text[:2000]} 상품:{product_desc} 출력: 1.후킹멘트 2.상품명 3.인트로", st.session_state.api_key_input, selected_model))
+
+        if btn_strategy:
+            if not st.session_state.api_key_input: st.error("API 키를 저장해주세요.")
+            elif not v_desc and not c_data: st.warning("분석할 데이터를 입력해주세요.")
+            else:
+                with st.spinner("경쟁사 전략을 역추적 중..."): 
+                    st.success(generate_content_auto(f"경쟁사 분석 필승 소구점 3가지 도출. 스크립트:{v_desc} 댓글:{c_data}", st.session_state.api_key_input, selected_model))
+
+    elif menu == "📥 영상 분석 추출":
+        st.markdown("<h1>영상 분석 및 워터마크 추출</h1>", unsafe_allow_html=True)
+        col_ext1, col_ext2 = st.columns(2, gap="medium")
+        with col_ext1:
+            st.markdown("<div class='glass-card'><h3>🔍 1. 숏폼 리서치 퀵 링크</h3></div>", unsafe_allow_html=True)
+            with st.form("form_media_search", clear_on_submit=False):
+                short_query = st.text_input("검색어 입력:", placeholder="예: 여름 원피스", label_visibility="collapsed")
+                auto_translate = st.checkbox("🇨🇳 도유인/틱톡 검색 시 중국어 자동 번역", value=True)
+                st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                cd, ct, cy = st.columns(3, gap="small"); cr, cn, ce = st.columns(3, gap="small")
+                with cd: btn_dy = st.form_submit_button("🇨🇳 도유인", use_container_width=True)
+                with ct: btn_tt = st.form_submit_button("🎵 틱톡", use_container_width=True)
+                with cy: btn_yt = st.form_submit_button("▶️ 숏츠", use_container_width=True)
+                with cr: btn_ig = st.form_submit_button("📱 릴스", use_container_width=True)
+                with cn: btn_nv = st.form_submit_button("🟢 클립", use_container_width=True)
+
+            if btn_dy:
+                q = short_query
+                if short_query and auto_translate and st.session_state.api_key_input:
+                    with st.spinner("🇨🇳 도유인 검색용 중국어 번역 중..."):
+                        cn_res = generate_content_auto(f"'{short_query}'를 중국어 간체자로 번역해. 단어 1개.", st.session_state.api_key_input, selected_model).strip()
+                        if not cn_res.startswith("❌"): q = cn_res
+                url = f"https://www.douyin.com/search/{quote(q)}" if short_query else "https://www.douyin.com/"
+                cloud_new_tab(url, "도유인")
+                
+            if btn_tt: 
+                q = short_query
+                if short_query and auto_translate and st.session_state.api_key_input:
+                    with st.spinner("🇨🇳 틱톡 검색용 중국어 번역 중..."):
+                        cn_res = generate_content_auto(f"'{short_query}'를 중국어 간체자로 번역해. 단어 1개.", st.session_state.api_key_input, selected_model).strip()
+                        if not cn_res.startswith("❌"): q = cn_res
+                url = f"https://www.tiktok.com/search?q={quote(q)}" if short_query else "https://www.tiktok.com/explore"
+                cloud_new_tab(url, "틱톡")
+                
+            if btn_yt: 
+                url = f"https://www.youtube.com/results?search_query={quote(short_query)}+shorts" if short_query else "https://www.youtube.com/shorts/"
+                cloud_new_tab(url, "유튜브 숏츠")
+                
+            if btn_ig: 
+                url = f"https://www.instagram.com/explore/search/keyword/?q={quote(short_query)}" if short_query else "https://www.instagram.com/reels/"
+                cloud_new_tab(url, "인스타그램 릴스")
+                
+            if btn_nv: 
+                url = f"https://search.naver.com/search.naver?query={quote(short_query)}&where=video" if short_query else "https://tv.naver.com/r"
+                cloud_new_tab(url, "네이버 클립")
+
+        with col_ext2:
+            st.markdown("<div class='glass-card'><h3>📥 2. 워터마크 제거 전용 다운로더</h3></div>", unsafe_allow_html=True)
+            st.markdown("""
+            <a href="https://dlpanda.com/ko" target="_blank" style="background: #18181b; color: #fafafa; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.7rem 0.4rem; font-weight: 500; font-size: 0.9rem; text-align: center; text-decoration: none; display: block; width: 100%; transition: all 0.2s ease; margin-bottom: 12px;">
+                🚀 🇨🇳 도유인 전용 다운로더 (dlpanda)
+            </a>
+            <a href="https://snaptik.app/ko" target="_blank" style="background: #18181b; color: #fafafa; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.7rem 0.4rem; font-weight: 500; font-size: 0.9rem; text-align: center; text-decoration: none; display: block; width: 100%; transition: all 0.2s ease;">
+                🚀 🎵 틱톡 전용 다운로더 (snaptik)
+            </a>
+            <style>
+                a:hover { background: #27272a !important; border-color: rgba(255,255,255,0.2) !important; }
+            </style>
+            """, unsafe_allow_html=True)
