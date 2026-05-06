@@ -247,7 +247,7 @@ def get_member_worksheet():
 
 def authenticate_user(uid, upw):
     # 🚨 관리자 아이디와 비밀번호 (여기를 원하는 비번으로 수정하세요!)
-    if uid == "admin" and upw == "1234":
+    if uid == "minjun" and upw == "gryrary0406**":
         return True, "마스터", "관리자", "VIP회원", ""
 
     ws, error_msg = get_member_worksheet()
